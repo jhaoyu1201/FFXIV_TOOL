@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFXIV 巨集指令產生器</title>
+    <style>
+        /* 基礎樣式，讓介面更清晰易讀 */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        h2, h3 {
+            color: #1e88e5; /* FFXIV 藍色 */
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 10px;
+            margin-top: 25px;
+        }
+        .macro-section {
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box; 
+        }
+        input[type="number"] {
+            width: 100px !important; /* 數字輸入框較小 */
+            display: inline-block;
+        }
+        button {
+            background-color: #4CAF50; /* 綠色按鈕 */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin-right: 10px;
+        }
+        button:hover:not(:disabled) {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #b0c4de;
+            cursor: not-allowed;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+            font-family: 'Consolas', 'Courier New', monospace; /* 使用等寬字體顯示指令 */
+            box-sizing: border-box;
+            resize: vertical;
+        }
+        .copy-button {
+            background-color: #f44336; /* 複製按鈕使用紅色 */
+        }
+        .copy-button:hover:not(:disabled) {
+            background-color: #d32f2f;
+        }
+        .result-title {
+            font-style: italic;
+            color: #777;
+            margin-top: 5px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>🛠️ FFXIV 網頁版巨集指令產生器</h2>
+        <p>請在下方輸入框輸入技能名稱，並複製產生的完整指令到遊戲內的巨集設定欄中。</p>
+        <hr>
+
+        <div class="macro-section">
+            <h3>🚑 治療技能巨集設定 (多重目標選擇)</h3>
+            
+            <label for="healSkillName">輸入治療技能名稱：</label>
+            <input type="text" id="healSkillName" placeholder="例如：再生, 野戰治療術">
+
+            <label for="targetType">選擇施放目標邏輯：</label>
+            <select id="targetType">
+                <option value="mo">滑鼠指向目標 (&lt;mo&gt;)</option>
+                <option value="t">當前鎖定目標 (&lt;t&gt;)</option>
+                <option value="numbered">指定隊伍成員 (1~8, &lt;X&gt;)</option>
+            </select>
+            
+            <div id="targetNumberContainer" style="display:none; margin-top:10px;">
+                <label for="targetNumber">輸入隊伍列表號碼 (1-8)：</label>
+                <input type="number" id="targetNumber" min="1" max="8" value="1">
+            </div>
+
+            <p class="result-title">生成結果 (請複製並貼入遊戲內巨集欄)：</p>
+            <textarea id="healMacroOutput" rows="3" readonly></textarea>
+
+            <button onclick="copyToClipboard('healMacroOutput')" id="copyHealButton" class="copy-button" disabled>複製指令</button>
+        </div>
+
+        <hr>
+
+        <div class="macro-section">
+            <h3>⚔️ 攻擊技能巨集設定 (自動鎖定敵人)</h3>
+
+            <label for="dpsSkillName">輸入攻擊技能名稱：</label>
+            <input type="text" id="dpsSkillName" placeholder="例如：爆發, 崩裂斬">
+
+            <p class="result-title">生成結果 (請複製並貼入遊戲內巨集欄)：</p>
+            <textarea id="dpsMacroOutput" rows="4" readonly></textarea>
+
+            <button onclick="copyToClipboard('dpsMacroOutput')" id="copyDpsButton" class="copy-button" disabled>複製指令</button>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 通用功能：複製到剪貼簿 ---
+        function copyToClipboard(elementId) {
+            const copyText = document.getElementById(elementId);
+            copyText.select(); 
+            copyText.setSelectionRange(0, 99999);
+
+            const buttonId = (elementId === 'healMacroOutput') ? 'copyHealButton' : 'copyDpsButton';
+            const button = document.getElementById(buttonId);
+            const originalText = '複製指令';
+
+            navigator.clipboard.writeText(copyText.value)
+                .then(() => {
+                    button.textContent = '✅ 已複製！';
+                    // 2秒後恢復按鈕文字
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('複製失敗: ', err);
+                    alert('複製失敗，您的瀏覽器可能不支持自動複製。請手動選取複製。');
+                });
+        }
+
+        // --- A: 治療技能巨集生成邏輯 ---
+        const healSkillInput = document.getElementById('healSkillName');
+        const healMacroOutput = document.getElementById('healMacroOutput');
+        const copyHealButton = document.getElementById('copyHealButton');
+        const targetTypeSelect = document.getElementById('targetType');
+        const targetNumberContainer = document.getElementById('targetNumberContainer');
+        const targetNumberInput = document.getElementById('targetNumber');
+
+        // 監聽所有相關輸入的變化
+        healSkillInput.addEventListener('input', generateHealMacro);
+        targetTypeSelect.addEventListener('change', generateHealMacro);
+        targetNumberInput.addEventListener('input', generateHealMacro);
+
+        // 根據選擇的目標類型，顯示或隱藏數字輸入框
+        targetTypeSelect.addEventListener('change', function() {
+            if (targetTypeSelect.value === 'numbered') {
+                targetNumberContainer.style.display = 'block';
+            } else {
+                targetNumberContainer.style.display = 'none';
+            }
+        });
+
+
+        function generateHealMacro() {
+            const skillName = healSkillInput.value.trim();
+            const selectedType = targetTypeSelect.value;
+            let targetParameter = '';
+
+            if (skillName) {
+                switch (selectedType) {
+                    case 'mo':
+                        targetParameter = '<mo>';
+                        break;
+                    case 't':
+                        targetParameter = '<t>';
+                        break;
+                    case 'numbered':
+                        let number = parseInt(targetNumberInput.value);
+                        // 確保數字在 1-8 之間
+                        if (number >= 1 && number <= 8) {
+                            targetParameter = `<${number}>`; // 使用 <X> 格式
+                        } else {
+                            targetParameter = '<error>'; // 顯示錯誤提示
+                        }
+                        break;
+                }
+
+                if (targetParameter === '<error>') {
+                    healMacroOutput.value = `錯誤：請輸入 1 到 8 的隊伍成員號碼！`;
+                    copyHealButton.disabled = true;
+                } else {
+                    // 治療巨集指令: /micon X 換行 /ac X <target>
+                    const macro = `/micon ${skillName}\n/ac ${skillName} ${targetParameter}`;
+                    healMacroOutput.value = macro;
+                    copyHealButton.disabled = false;
+                }
+            } else {
+                healMacroOutput.value = '';
+                copyHealButton.disabled = true;
+            }
+        }
+
+        // --- B: 攻擊技能巨集生成邏輯 ---
+        const dpsSkillInput = document.getElementById('dpsSkillName');
+        const dpsMacroOutput = document.getElementById('dpsMacroOutput');
+        const copyDpsButton = document.getElementById('copyDpsButton');
+
+        dpsSkillInput.addEventListener('input', generateDpsMacro);
+
+        function generateDpsMacro() {
+            const skillName = dpsSkillInput.value.trim();
+
+            if (skillName) {
+                // 攻擊巨集指令: /micon Y 換行 /targetenemy 換行 /ac Y
+                const macro = `/micon ${skillName}\n/targetenemy\n/ac ${skillName}`;
+                dpsMacroOutput.value = macro;
+                copyDpsButton.disabled = false;
+            } else {
+                dpsMacroOutput.value = '';
+                copyDpsButton.disabled = true;
+            }
+        }
+
+        // 頁面載入時先執行一次，以確保初始狀態正確
+        generateHealMacro();
+        generateDpsMacro();
+    </script>
+
+</body>
+</html>
