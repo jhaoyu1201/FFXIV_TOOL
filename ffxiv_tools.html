@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FF14 冒險者便捷工具箱 - 深色模式</title>
+    <style>
+        /* 1. 基礎設定與字體 */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", "PingFang TC", "Microsoft YaHei", sans-serif;
+            line-height: 1.6; 
+            max-width: 900px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            
+            /* 深色模式背景 */
+            background-color: #1c1c1e; /* 非常深的背景灰 */
+            color: #f2f2f7; /* 柔和的白色文字 */
+        }
+        
+        /* 2. 標題與導航 */
+        header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+            padding-top: 20px;
+        }
+        h1 { 
+            /* 深色模式下的藍色強調色 */
+            color: #0a84ff; 
+            font-weight: 700; 
+            font-size: 2em; 
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            color: #b0b0b5; /* 淺一點的次要文字 */
+            font-size: 1.1em;
+        }
+
+        /* 3. 分區標題 */
+        h2 { 
+            color: #f2f2f7; /* 白色標題 */
+            margin-top: 40px; 
+            margin-bottom: 15px;
+            font-size: 1.3em; 
+            font-weight: 600; 
+        }
+        
+        /* 4. 工具卡片（深色模式的卡片背景）*/
+        .tool-card { 
+            /* 深色卡片背景 */
+            background-color: #2c2c2e; 
+            border-radius: 15px; 
+            padding: 20px; 
+            margin-bottom: 15px; 
+            /* 柔和的陰影 */
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex; 
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .tool-info h3 {
+            margin: 0;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #f2f2f7; /* 白色標題 */
+        }
+
+        .tool-info p { 
+            margin: 5px 0 0 0; 
+            color: #8e8e93; /* 次要文字顏色 */
+            font-size: 0.9em; 
+        }
+        
+        /* 5. 按鈕（藍色強調，圓角）*/
+        .tool-card a { 
+            /* 使用標準 iOS 藍色 */
+            background-color: #0a84ff; 
+            color: white; 
+            padding: 10px 18px; 
+            text-decoration: none; 
+            border-radius: 20px; 
+            font-weight: 600;
+            white-space: nowrap; 
+            transition: background-color 0.2s ease-in-out;
+        }
+        
+        .tool-card a:hover { 
+            background-color: #3d92ff; /* 滑鼠懸停時變亮一點 */
+            transform: scale(0.98);
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🌐 FF14 冒險者便捷工具箱</h1>
+        <p class="subtitle">整合玩家必備工具，輕鬆暢遊艾歐澤亞。</p>
+    </header>
+
+    <h2>📘 核心資訊與攻略</h2>
+    <div class="tool-card">
+        <div class="tool-info">
+            <h3>通用 WIKI (灰機)</h3>
+            <p>任務、物品、副本攻略、劇情、技能等所有遊戲資料。</p>
+        </div>
+        <a href="https://ff14.huijiwiki.com/wiki/%E9%A6%96%E9%A1%B5" target="_blank">前往 WIKI</a>
+    </div>
+
+    <h2>🛠️ 專業生產與製造</h2>
+    <div class="tool-card">
+        <div class="tool-info">
+            <h3>生產模擬器 (NightCore)</h3>
+            <p>計算最佳生產手法，模擬高品質成品，衝製作等級必備。</p>
+        </div>
+        <a href="https://nightcoreisla.github.io/ffxiv-best-craft-zhtw/#/welcome" target="_blank">前往模擬</a>
+    </div>
+
+    <h2>👗 時裝幻化與搭配</h2>
+    <div class="tool-card">
+        <div class="tool-info">
+            <h3>Eorzea Collection (時裝搭配)</h3>
+            <p>瀏覽全球玩家的時裝搭配、幻化方案，尋找穿搭靈感。</p>
+        </div>
+        <a href="https://ffxiv.eorzeacollection.com/" target="_blank">前往搭配</a>
+    </div>
+
+    <h2>🎲 休閒與輔助工具</h2>
+    <div class="tool-card">
+        <div class="tool-info">
+            <h3>仙人微彩計算器</h3>
+            <p>計算仙人微彩（九宮格）的最佳解法與最高得分機率。</p>
+        </div>
+        <a href="https://yyyy.games/xrc/" target="_blank">前往計算</a>
+    </div>
+
+    <div class="tool-card">
+        <div class="tool-info">
+            <h3>FF14 釣魚工具網站</h3>
+            <p>查詢魚類資訊、釣場地點、天氣要求、魚餌等詳細資料。</p>
+        </div>
+        <a href="https://fish.ffmomola.com/" target="_blank">前往釣魚</a>
+    </div>
+
+    <div class="tool-card">
+        <div class="tool-info">
+            <h3>通用工具網站 (含垃圾牌/價格)</h3>
+            <p>包含各種小型工具，如風脈位置、坐騎列表等實用功能。</p>
+        </div>
+        <a href="https://tools.ffsusu.com/lajipai/" target="_blank">前往工具</a>
+    </div>
+
+</body>
+</html>
