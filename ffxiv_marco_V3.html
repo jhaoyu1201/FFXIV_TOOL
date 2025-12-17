@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFXIV 巨集指令產生器 (v10.1)</title>
+    <style>
+        /* 1. CSS 變數與基礎樣式 (沿用 v10.0) */
+        :root {
+            --bg-color-base: #f4f7f9; --pulse-color: #dbeaff; --text-color: #333;
+            --container-bg: #fff; --border-color: #e0e0e0; --input-bg: #f9f9f9;
+            --primary-color: #1e88e5; --copy-button-bg: #f44336; --main-button-bg: #4CAF50;
+        }
+        body[data-theme="dark"] {
+            --bg-color-base: #222831; --pulse-color: #1a1e26; --text-color: #eeeeee;
+            --container-bg: #393e46; --border-color: #4f5358; --input-bg: #4a4e54;
+            --primary-color: #00adb5; --copy-button-bg: #ff9a3c; --main-button-bg: #764BA2;
+        }
+        body[data-theme="pink"] {
+            --bg-color-base: #fff0f5; --pulse-color: #ffe0ee; --text-color: #5d3954; 
+            --container-bg: #ffffff; --border-color: #ffc0cb; --input-bg: #ffe0ee;
+            --primary-color: #ff69b4; --copy-button-bg: #e91e63; --main-button-bg: #ff80a6;
+        }
+
+        @keyframes breathe {
+            0% { background-color: var(--bg-color-base); }
+            50% { background-color: var(--pulse-color); }
+            100% { background-color: var(--bg-color-base); }
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-color); line-height: 1.6; padding: 20px;
+            max-width: 900px; margin: 0 auto; background-color: var(--bg-color-base);
+            animation: breathe 10s ease-in-out infinite; transition: color 0.3s;
+        }
+        
+        .container {
+            background: var(--container-bg); padding: 30px; border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); transition: background-color 0.3s;
+        }
+        
+        h3 { color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-top: 25px; }
+        .macro-section { padding: 20px 0; margin-bottom: 30px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; }
+        input[type="text"], input[type="number"], select {
+            width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color);
+            border-radius: 6px; box-sizing: border-box; background-color: var(--input-bg); color: var(--text-color);
+        }
+        .countdown-container { border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; background-color: var(--input-bg); }
+        button { background-color: var(--main-button-bg); color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 10px; transition: 0.3s; }
+        button:hover:not(:disabled) { filter: brightness(1.1); }
+        button:disabled { background-color: #b0c4de; cursor: not-allowed; }
+        textarea { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; background-color: var(--input-bg); color: var(--text-color); font-family: monospace; resize: vertical; }
+        .copy-button { background-color: var(--copy-button-bg); }
+        
+        /* 提示框樣式 */
+        .info-box { background: rgba(0,0,0,0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9em; border-left: 4px solid var(--primary-color); }
+        .tip-box { background: rgba(255, 193, 7, 0.1); padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 0.85em; border-left: 4px solid #ffc107; color: var(--text-color); }
+    </style>
+</head>
+<body data-theme="light"> 
+
+    <div class="container">
+        <div class="theme-selector" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+            <label for="themeSelector" style="display: inline; margin-right: 15px;">🎨 選擇 UI 風格：</label>
+            <select id="themeSelector" style="width: auto; display: inline-block;">
+                <option value="light">一般模式</option>
+                <option value="dark">深色模式</option>
+                <option value="pink">粉色模式</option>
+            </select>
+        </div>
+
+        <h1>🛠️ FFXIV 巨集指令產生器</h1>
+        <p>本工具旨在優化您的遊戲手感，特別針對延遲補償與焦點管理。</p>
+
+        <hr>
+
+        <div class="macro-section">
+            <h3>🎯 焦點目標 (Focus Target) 專區</h3>
+            <div class="info-box">
+                <strong>💡 什麼是焦點目標？</strong><br>
+                將 BOSS 或特定隊友設為焦點（Focus），即使當前目標在攻擊其他小怪，也能透過此巨集快速對「焦點」發動技能（如打斷技或減傷）。
+            </div>
+
+            <label>步驟 1：快速設定焦點巨集</label>
+            <div class="countdown-container">
+                <p style="margin-top:0; font-size: 0.9em; opacity: 0.8;">用法：滑鼠指向目標按此鍵，即設為焦點。</p>
+                <textarea id="focusSetupMacro" rows="2" readonly>/focustarget <mo>
+/e 焦點目標已更新 ➔ <f> <se.15></textarea>
+                <button onclick="copyToClipboard('focusSetupMacro', 'copySetupBtn')" id="copySetupBtn" class="copy-button">複製設定指令</button>
+            </div>
+
+            <label for="focusSkillName">步驟 2：生成「焦點優先」技能巨集</label>
+            <input type="text" id="focusSkillName" placeholder="例如：傷殘, 插槽技能, 救療" oninput="generateFocusMacro()">
+            
+            <div class="tip-box">
+                <strong>⚠️ 手感提醒：</strong><br>
+                為補償延遲，產生的巨集包含重複指令。施放時請保持平常節奏（按 1-2 下即可），過度狂按巨集可能會導致微小的動畫硬直（卡 GCD）。
+            </div>
+
+            <p style="font-style: italic; opacity: 0.7; margin-top: 15px; font-size: 0.9em;">生成結果：</p>
+            <textarea id="focusMacroOutput" rows="6" readonly></textarea>
+            <button onclick="copyToClipboard('focusMacroOutput', 'copyFocusButton')" id="copyFocusButton" class="copy-button" disabled>複製指令</button>
+        </div>
+
+        </div>
+
+    <script>
+        function copyToClipboard(elementId, buttonId) {
+            const copyText = document.getElementById(elementId);
+            const button = document.getElementById(buttonId);
+            const originalText = button.textContent;
+            copyText.select();
+            navigator.clipboard.writeText(copyText.value).then(() => {
+                button.textContent = '✅ 已複製！';
+                setTimeout(() => { button.textContent = originalText; }, 2000);
+            });
+        }
+
+        function generateFocusMacro() {
+            const skill = document.getElementById('focusSkillName').value.trim();
+            const output = document.getElementById('focusMacroOutput');
+            const btn = document.getElementById('copyFocusButton');
+            
+            if (!skill) {
+                output.value = ''; btn.disabled = true; return;
+            }
+            
+            let macro = `/micon ${skill}\n/merror off\n`;
+            // 重複三次以對抗延遲，提高「塞進 GCD 縫隙」的機率
+            macro += `/ac ${skill} <f>\n/ac ${skill} <f>\n/ac ${skill} <f>\n`;
+            macro += `/ac ${skill} <t>`;
+            
+            output.value = macro.trim();
+            btn.disabled = false;
+        }
+
+        // 主題切換邏輯
+        document.getElementById('themeSelector').addEventListener('change', function() {
+            document.body.setAttribute('data-theme', this.value);
+            localStorage.setItem('ffxivMacroTheme', this.value);
+        });
+
+        window.addEventListener('load', () => {
+            const saved = localStorage.getItem('ffxivMacroTheme') || 'light';
+            document.body.setAttribute('data-theme', saved);
+            document.getElementById('themeSelector').value = saved;
+        });
+    </script>
+</body>
+</html>
