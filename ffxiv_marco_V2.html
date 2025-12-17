@@ -3,29 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FFXIV 巨集指令產生器</title>
+    <title>FFXIV 巨集指令產生器 (v9.0 - 精確倒數提醒)</title>
     <style>
-        /* 基礎樣式，讓介面更清晰易讀 */
+        /* 1. CSS 變數定義 (預設為一般模式) */
+        :root {
+            /* UI 顏色 */
+            --bg-color-base: #f4f7f9; /* 基礎背景色 */
+            --pulse-color: #dbeaff;   /* 呼吸光目標色 (淺藍) */
+            --text-color: #333;
+            --container-bg: #fff;
+            --border-color: #e0e0e0;
+            --input-bg: #f9f9f9;
+            --primary-color: #1e88e5; 
+            --copy-button-bg: #f44336;
+            --main-button-bg: #4CAF50;
+        }
+
+        /* 2. 深色模式變數 */
+        body[data-theme="dark"] {
+            --bg-color-base: #222831;
+            --pulse-color: #1a1e26;  /* 呼吸光目標色 (更深的黑) */
+            --text-color: #eeeeee;
+            --container-bg: #393e46;
+            --border-color: #4f5358;
+            --input-bg: #4a4e54;
+            --primary-color: #00adb5;
+            --copy-button-bg: #ff9a3c;
+            --main-button-bg: #764BA2;
+        }
+        
+        /* 3. 粉色夢幻模式變數 */
+        body[data-theme="pink"] {
+            --bg-color-base: #fff0f5;
+            --pulse-color: #ffe0ee;  /* 呼吸光目標色 (淺粉) */
+            --text-color: #5d3954; 
+            --container-bg: #ffffff;
+            --border-color: #ffc0cb; 
+            --input-bg: #ffe0ee;
+            --primary-color: #ff69b4; 
+            --copy-button-bg: #e91e63;
+            --main-button-bg: #ff80a6;
+        }
+
+        /* 4. 呼吸光動畫定義 */
+        @keyframes breathe {
+            0% {
+                background-color: var(--bg-color-base);
+            }
+            50% {
+                background-color: var(--pulse-color);
+            }
+            100% {
+                background-color: var(--bg-color-base);
+            }
+        }
+
+        /* 5. 基礎樣式與版面配置 */
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f9;
-            color: #333;
+            color: var(--text-color);
             line-height: 1.6;
             padding: 20px;
             max-width: 900px;
             margin: 0 auto;
+            transition: color 0.3s;
+            
+            /* 呼吸光背景設置 */
+            background-color: var(--bg-color-base);
+            animation: breathe 10s ease-in-out infinite; 
         }
+        
         .container {
-            background: #fff;
+            background: var(--container-bg);
             padding: 30px;
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s;
         }
+        
         h2, h3 {
-            color: #1e88e5; /* FFXIV 藍色 */
-            border-bottom: 2px solid #e0e0e0;
+            color: var(--primary-color); 
+            border-bottom: 2px solid var(--border-color);
             padding-bottom: 10px;
             margin-top: 25px;
+            transition: color 0.3s;
         }
         .macro-section {
             padding: 20px 0;
@@ -35,22 +96,51 @@
             display: block;
             margin-bottom: 8px;
             font-weight: bold;
-            color: #555;
+            color: var(--text-color);
         }
         input[type="text"], input[type="number"], select {
             width: 100%;
             padding: 10px;
             margin-bottom: 15px;
-            border: 1px solid #ccc;
+            border: 1px solid var(--border-color);
             border-radius: 6px;
             box-sizing: border-box; 
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
         }
         input[type="number"] {
-            width: 100px !important; /* 數字輸入框較小 */
+            width: 100px !important; 
             display: inline-block;
         }
+        /* 倒數計時容器的樣式 */
+        .countdown-container {
+            border: 1px solid var(--border-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            background-color: var(--input-bg);
+        }
+        .countdown-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 8px;
+            margin-bottom: 8px;
+        }
+        .countdown-row label, .countdown-row input, .countdown-row select {
+            width: auto;
+            margin-bottom: 0;
+        }
+        .countdown-row input[type="number"], .countdown-row select {
+            width: 60px !important;
+            padding: 5px;
+            margin: 0;
+        }
+        
+        /* 其他 UI 樣式 (省略未變更部分) */
         button {
-            background-color: #4CAF50; /* 綠色按鈕 */
+            background-color: var(--main-button-bg); 
             color: white;
             padding: 10px 20px;
             border: none;
@@ -59,45 +149,62 @@
             font-size: 16px;
             transition: background-color 0.3s;
             margin-right: 10px;
+            margin-top: 10px;
         }
         button:hover:not(:disabled) {
-            background-color: #45a049;
+            filter: brightness(1.1);
         }
         button:disabled {
             background-color: #b0c4de;
             cursor: not-allowed;
+            filter: none;
         }
         textarea {
             width: 100%;
             padding: 10px;
             margin-top: 10px;
             margin-bottom: 15px;
-            border: 1px solid #ddd;
+            border: 1px solid var(--border-color);
             border-radius: 6px;
-            background-color: #f9f9f9;
-            font-family: 'Consolas', 'Courier New', monospace; /* 使用等寬字體顯示指令 */
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-family: 'Consolas', 'Courier New', monospace; 
             box-sizing: border-box;
             resize: vertical;
+            transition: background-color 0.3s, color 0.3s;
         }
         .copy-button {
-            background-color: #f44336; /* 複製按鈕使用紅色 */
-        }
-        .copy-button:hover:not(:disabled) {
-            background-color: #d32f2f;
+            background-color: var(--copy-button-bg); 
         }
         .result-title {
             font-style: italic;
-            color: #777;
+            color: var(--text-color);
+            opacity: 0.7;
             margin-top: 5px;
             font-size: 0.9em;
         }
+        .theme-selector {
+            margin-bottom: 20px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
     </style>
 </head>
-<body>
+<body data-theme="light"> 
 
     <div class="container">
-        <h2>🛠️ FFXIV 網頁版巨集指令產生器</h2>
-        <p>請在下方輸入框輸入技能名稱，並複製產生的完整指令到遊戲內的巨集設定欄中。</p>
+        
+        <div class="theme-selector">
+            <label for="themeSelector" style="display: inline; margin-right: 15px;">🎨 選擇 UI 風格：</label>
+            <select id="themeSelector" style="width: auto; display: inline-block;">
+                <option value="light">一般模式</option>
+                <option value="dark">深色模式</option>
+                <option value="pink">粉色夢幻模式</option>
+            </select>
+        </div>
+
+        <h2>🛠️ FFXIV 巨集指令產生器 (v9.0 - 精確倒數提醒)</h2>
+        <p>此版本已優化冷卻倒數提醒功能：**只會在技能準備好前的 3 秒發出提示音。**</p>
         <hr>
 
         <div class="macro-section">
@@ -106,9 +213,30 @@
             <label for="healSkillName">輸入治療技能名稱：</label>
             <input type="text" id="healSkillName" placeholder="例如：再生, 野戰治療術">
 
+            <div class="countdown-container">
+                <label>
+                    <input type="checkbox" id="healEnableCountdown"> 啟用冷卻倒數提醒 (巨集按鈕將鎖定 X 秒)
+                </label>
+                <div id="healCountdownSettings" style="display:none;">
+                    <div class="countdown-row">
+                        <label for="healCooldownTime">冷卻時間 (秒)：</label>
+                        <input type="number" id="healCooldownTime" min="4" value="60">
+                        <span style="font-size: 0.9em; opacity: 0.8; font-weight: normal;">(最少 4 秒)</span>
+                    </div>
+                    <div class="countdown-row">
+                        <label for="healSoundEffect">提示音編號：</label>
+                        <select id="healSoundEffect">
+                            </select>
+                        <span style="font-size: 0.9em; opacity: 0.8; font-weight: normal;">(&lt;se.X&gt;)</span>
+                    </div>
+                </div>
+            </div>
+
+
             <label for="targetType">選擇施放目標邏輯：</label>
             <select id="targetType">
-                <option value="mo">滑鼠指向目標 (&lt;mo&gt;)</option>
+                <option value="mo">指向模式 (&lt;mo&gt;)</option>
+                <option value="me">自己為目標 (&lt;me&gt;)</option>
                 <option value="t">當前鎖定目標 (&lt;t&gt;)</option>
                 <option value="numbered">指定隊伍成員 (1~8, &lt;X&gt;)</option>
             </select>
@@ -119,7 +247,7 @@
             </div>
 
             <p class="result-title">生成結果 (請複製並貼入遊戲內巨集欄)：</p>
-            <textarea id="healMacroOutput" rows="3" readonly></textarea>
+            <textarea id="healMacroOutput" rows="7" readonly></textarea>
 
             <button onclick="copyToClipboard('healMacroOutput')" id="copyHealButton" class="copy-button" disabled>複製指令</button>
         </div>
@@ -127,13 +255,39 @@
         <hr>
 
         <div class="macro-section">
-            <h3>⚔️ 攻擊技能巨集設定 (自動鎖定敵人)</h3>
+            <h3>⚔️ 攻擊技能巨集設定 (目標模式選擇)</h3>
 
             <label for="dpsSkillName">輸入攻擊技能名稱：</label>
-            <input type="text" id="dpsSkillName" placeholder="例如：爆發, 崩裂斬">
+            <input type="text" id="dpsSkillName" placeholder="例如：崩石, 勁風, 爆發">
+            
+            <div class="countdown-container">
+                <label>
+                    <input type="checkbox" id="dpsEnableCountdown"> 啟用冷卻倒數提醒 (巨集按鈕將鎖定 X 秒)
+                </label>
+                <div id="dpsCountdownSettings" style="display:none;">
+                    <div class="countdown-row">
+                        <label for="dpsCooldownTime">冷卻時間 (秒)：</label>
+                        <input type="number" id="dpsCooldownTime" min="4" value="120">
+                        <span style="font-size: 0.9em; opacity: 0.8; font-weight: normal;">(最少 4 秒)</span>
+                    </div>
+                    <div class="countdown-row">
+                        <label for="dpsSoundEffect">提示音編號：</label>
+                        <select id="dpsSoundEffect">
+                            </select>
+                        <span style="font-size: 0.9em; opacity: 0.8; font-weight: normal;">(&lt;se.X&gt;)</span>
+                    </div>
+                </div>
+            </div>
+
+            <label for="dpsTargetMode">選擇攻擊巨集模式：</label>
+            <select id="dpsTargetMode">
+                <option value="standard">標準模式 (/targetenemy)</option>
+                <option value="mo_fallback">指向模式 (&lt;mo&gt;)</option>
+            </select>
+
 
             <p class="result-title">生成結果 (請複製並貼入遊戲內巨集欄)：</p>
-            <textarea id="dpsMacroOutput" rows="4" readonly></textarea>
+            <textarea id="dpsMacroOutput" rows="8" readonly></textarea>
 
             <button onclick="copyToClipboard('dpsMacroOutput')" id="copyDpsButton" class="copy-button" disabled>複製指令</button>
         </div>
@@ -141,7 +295,7 @@
     </div>
 
     <script>
-        // --- 通用功能：複製到剪貼簿 ---
+        // --- 通用功能：複製到剪貼簿 (邏輯不變) ---
         function copyToClipboard(elementId) {
             const copyText = document.getElementById(elementId);
             copyText.select(); 
@@ -154,7 +308,6 @@
             navigator.clipboard.writeText(copyText.value)
                 .then(() => {
                     button.textContent = '✅ 已複製！';
-                    // 2秒後恢復按鈕文字
                     setTimeout(() => {
                         button.textContent = originalText;
                     }, 2000);
@@ -164,93 +317,232 @@
                     alert('複製失敗，您的瀏覽器可能不支持自動複製。請手動選取複製。');
                 });
         }
+        
+        // --- 全局變數/常量 ---
+        const MERROR_OFF = '/merror off\n'; 
+        
+        // --- 初始化：提示音下拉選單 ---
+        function populateSoundEffects(selectId) {
+            const select = document.getElementById(selectId);
+            for (let i = 1; i <= 16; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                select.appendChild(option);
+            }
+            select.value = 6; 
+        }
 
-        // --- A: 治療技能巨集生成邏輯 ---
+        // --- A: 治療技能巨集生成邏輯 (更新: 靜默等待) ---
         const healSkillInput = document.getElementById('healSkillName');
         const healMacroOutput = document.getElementById('healMacroOutput');
         const copyHealButton = document.getElementById('copyHealButton');
         const targetTypeSelect = document.getElementById('targetType');
         const targetNumberContainer = document.getElementById('targetNumberContainer');
         const targetNumberInput = document.getElementById('targetNumber');
+        const healEnableCountdown = document.getElementById('healEnableCountdown');
+        const healCooldownTime = document.getElementById('healCooldownTime');
+        const healCountdownSettings = document.getElementById('healCountdownSettings');
+        const healSoundEffect = document.getElementById('healSoundEffect');
 
         // 監聽所有相關輸入的變化
-        healSkillInput.addEventListener('input', generateHealMacro);
-        targetTypeSelect.addEventListener('change', generateHealMacro);
-        targetNumberInput.addEventListener('input', generateHealMacro);
+        [healSkillInput, targetTypeSelect, targetNumberInput, healCooldownTime, healSoundEffect].forEach(el => {
+            if (el) el.addEventListener('input', generateHealMacro);
+            if (el) el.addEventListener('change', generateHealMacro);
+        });
 
-        // 根據選擇的目標類型，顯示或隱藏數字輸入框
+        healEnableCountdown.addEventListener('change', function() {
+            healCountdownSettings.style.display = this.checked ? 'block' : 'none';
+            generateHealMacro();
+        });
+
         targetTypeSelect.addEventListener('change', function() {
-            if (targetTypeSelect.value === 'numbered') {
-                targetNumberContainer.style.display = 'block';
-            } else {
-                targetNumberContainer.style.display = 'none';
-            }
+            targetNumberContainer.style.display = (targetTypeSelect.value === 'numbered') ? 'block' : 'none';
         });
 
 
         function generateHealMacro() {
             const skillName = healSkillInput.value.trim();
             const selectedType = targetTypeSelect.value;
+            const enableCD = healEnableCountdown.checked;
+            const cdTime = parseInt(healCooldownTime.value);
+            const soundEffect = healSoundEffect.value;
             let targetParameter = '';
+            let macro = '';
 
-            if (skillName) {
-                switch (selectedType) {
-                    case 'mo':
-                        targetParameter = '<mo>';
-                        break;
-                    case 't':
-                        targetParameter = '<t>';
-                        break;
-                    case 'numbered':
-                        let number = parseInt(targetNumberInput.value);
-                        // 確保數字在 1-8 之間
-                        if (number >= 1 && number <= 8) {
-                            targetParameter = `<${number}>`; // 使用 <X> 格式
-                        } else {
-                            targetParameter = '<error>'; // 顯示錯誤提示
-                        }
-                        break;
-                }
-
-                if (targetParameter === '<error>') {
-                    healMacroOutput.value = `錯誤：請輸入 1 到 8 的隊伍成員號碼！`;
-                    copyHealButton.disabled = true;
-                } else {
-                    // 治療巨集指令: /micon X 換行 /ac X <target>
-                    const macro = `/micon ${skillName}\n/ac ${skillName} ${targetParameter}`;
-                    healMacroOutput.value = macro;
-                    copyHealButton.disabled = false;
-                }
-            } else {
+            if (!skillName) {
                 healMacroOutput.value = '';
                 copyHealButton.disabled = true;
+                return;
             }
+            
+            // 1. 處理目標參數
+            switch (selectedType) {
+                case 'mo':
+                    targetParameter = '<mo>';
+                    break;
+                case 'me':
+                    targetParameter = '<me>';
+                    break;
+                case 't':
+                    targetParameter = '<t>';
+                    break;
+                case 'numbered':
+                    let number = parseInt(targetNumberInput.value);
+                    if (number >= 1 && number <= 8) {
+                        targetParameter = `<${number}>`;
+                    } else {
+                        healMacroOutput.value = `錯誤：請輸入 1 到 8 的隊伍成員號碼！`;
+                        copyHealButton.disabled = true;
+                        return;
+                    }
+                    break;
+            }
+
+            // 2. 冷卻提醒邏輯檢查
+            if (enableCD) {
+                if (cdTime < 4) {
+                    healMacroOutput.value = `錯誤：啟用冷卻提醒時，冷卻時間必須大於或等於 4 秒！`;
+                    copyHealButton.disabled = true;
+                    return;
+                }
+            }
+
+            // 3. 組裝巨集指令
+            macro += `/micon ${skillName}\n`;
+            macro += MERROR_OFF; 
+            
+            // 技能施放
+            if (selectedType === 'mo') {
+                for (let i = 0; i < 3; i++) {
+                    macro += `/ac ${skillName} ${targetParameter}\n`;
+                }
+            } else {
+                macro += `/ac ${skillName} ${targetParameter}\n`;
+            }
+
+            // 冷卻提醒 (在技能執行後才啟動)
+            if (enableCD) {
+                // 靜默等待時間 = 總冷卻時間 - 3 秒提醒時間
+                const waitTime = cdTime - 3;
+                
+                // 靜默等待 (巨集按鈕鎖定)
+                macro += `/wait ${waitTime}\n`;
+                
+                // 剩餘 3 秒提醒並播放提示音 (巨集執行完畢，按鈕解鎖)
+                macro += `/e "[${skillName}]" 還有 3 秒冷卻完畢！ <se.${soundEffect}>`;
+            }
+
+
+            healMacroOutput.value = macro.trim(); 
+            copyHealButton.disabled = false;
         }
 
-        // --- B: 攻擊技能巨集生成邏輯 ---
+        // --- B: 攻擊技能巨集生成邏輯 (更新: 靜默等待) ---
         const dpsSkillInput = document.getElementById('dpsSkillName');
         const dpsMacroOutput = document.getElementById('dpsMacroOutput');
         const copyDpsButton = document.getElementById('copyDpsButton');
+        const dpsTargetModeSelect = document.getElementById('dpsTargetMode');
+        const dpsEnableCountdown = document.getElementById('dpsEnableCountdown');
+        const dpsCooldownTime = document.getElementById('dpsCooldownTime');
+        const dpsCountdownSettings = document.getElementById('dpsCountdownSettings');
+        const dpsSoundEffect = document.getElementById('dpsSoundEffect');
 
-        dpsSkillInput.addEventListener('input', generateDpsMacro);
+        // 監聽所有相關輸入的變化
+        [dpsSkillInput, dpsTargetModeSelect, dpsCooldownTime, dpsSoundEffect].forEach(el => {
+            if (el) el.addEventListener('input', generateDpsMacro);
+            if (el) el.addEventListener('change', generateDpsMacro);
+        });
+
+        dpsEnableCountdown.addEventListener('change', function() {
+            dpsCountdownSettings.style.display = this.checked ? 'block' : 'none';
+            generateDpsMacro();
+        });
+
 
         function generateDpsMacro() {
             const skillName = dpsSkillInput.value.trim();
+            const selectedMode = dpsTargetModeSelect.value;
+            const enableCD = dpsEnableCountdown.checked;
+            const cdTime = parseInt(dpsCooldownTime.value);
+            const soundEffect = dpsSoundEffect.value;
+            let macro = '';
 
-            if (skillName) {
-                // 攻擊巨集指令: /micon Y 換行 /targetenemy 換行 /ac Y
-                const macro = `/micon ${skillName}\n/targetenemy\n/ac ${skillName}`;
-                dpsMacroOutput.value = macro;
-                copyDpsButton.disabled = false;
-            } else {
+            if (!skillName) {
                 dpsMacroOutput.value = '';
                 copyDpsButton.disabled = true;
+                return;
             }
+            
+            // 冷卻提醒邏輯檢查
+            if (enableCD) {
+                if (cdTime < 4) {
+                    dpsMacroOutput.value = `錯誤：啟用冷卻提醒時，冷卻時間必須大於或等於 4 秒！`;
+                    copyDpsButton.disabled = true;
+                    return;
+                }
+            }
+
+            // 組裝巨集指令
+            macro += `/micon ${skillName}\n`;
+            macro += MERROR_OFF;
+            
+            // 攻擊模式
+            if (selectedMode === 'standard') {
+                macro += `/targetenemy\n`;
+                macro += `/ac ${skillName}`;
+            } else if (selectedMode === 'mo_fallback') {
+                for (let i = 0; i < 3; i++) {
+                    macro += `/ac ${skillName} <mo>\n`; 
+                }
+                macro += `/ac ${skillName} <t>`; 
+            }
+            
+            // 處理攻擊模式下的換行
+            if (selectedMode === 'standard') {
+                macro += `\n`; 
+            }
+
+            // 冷卻提醒 (在技能執行後才啟動)
+            if (enableCD) {
+                const waitTime = cdTime - 3;
+                
+                // 靜默等待 (巨集按鈕鎖定)
+                macro += `/wait ${waitTime}\n`;
+                
+                // 剩餘 3 秒提醒並播放提示音 (巨集執行完畢，按鈕解鎖)
+                macro += `/e "[${skillName}]" 還有 3 秒冷卻完畢！ <se.${soundEffect}>`;
+            }
+
+            dpsMacroOutput.value = macro.trim();
+            copyDpsButton.disabled = false;
         }
 
-        // 頁面載入時先執行一次，以確保初始狀態正確
-        generateHealMacro();
-        generateDpsMacro();
+        // 頁面載入時執行初始化和生成
+        window.addEventListener('load', function() {
+            // 載入主題
+            const savedTheme = localStorage.getItem('ffxivMacroTheme');
+            if (savedTheme) {
+                document.body.setAttribute('data-theme', savedTheme);
+                document.getElementById('themeSelector').value = savedTheme;
+            }
+
+            // 初始化提示音選單
+            populateSoundEffects('healSoundEffect');
+            populateSoundEffects('dpsSoundEffect');
+
+            // 執行巨集生成
+            generateHealMacro();
+            generateDpsMacro();
+        });
+        
+        // --- 核心主題切換邏輯 ---
+        document.getElementById('themeSelector').addEventListener('change', function() {
+            const selectedTheme = this.value;
+            document.body.setAttribute('data-theme', selectedTheme);
+            localStorage.setItem('ffxivMacroTheme', selectedTheme);
+        });
+
     </script>
 
 </body>
