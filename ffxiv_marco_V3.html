@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FFXIV 巨集指令產生器 (v10.6 Multi-Modal)</title>
+    <title>FFXIV 巨集指令產生器 (v10.8 Warning Edition)</title>
     <style>
         /* CSS 變數 */
         :root {
@@ -16,6 +16,8 @@
             --primary-color: #1e88e5; 
             --copy-button-bg: #f44336;
             --main-button-bg: #4CAF50;
+            --warning-bg: rgba(255, 152, 0, 0.1);
+            --warning-border: #ff9800;
         }
 
         body[data-theme="dark"] {
@@ -28,6 +30,7 @@
             --primary-color: #00adb5;
             --copy-button-bg: #ff9a3c;
             --main-button-bg: #764BA2;
+            --warning-bg: rgba(255, 152, 0, 0.15);
         }
         
         body[data-theme="pink"] {
@@ -40,6 +43,8 @@
             --primary-color: #ff69b4; 
             --copy-button-bg: #e91e63;
             --main-button-bg: #ff80a6;
+            --warning-bg: rgba(255, 105, 180, 0.1);
+            --warning-border: #ff69b4;
         }
 
         @keyframes breathe {
@@ -87,6 +92,17 @@
 
         textarea { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; background-color: var(--input-bg); color: var(--text-color); font-family: 'Consolas', monospace; resize: vertical; box-sizing: border-box; }
         .copy-button { background-color: var(--copy-button-bg); }
+
+        /* 警示區塊 */
+        .warning-box {
+            display: none;
+            background-color: var(--warning-bg);
+            border-left: 5px solid var(--warning-border);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
 
         /* 彈窗樣式 (Modal) */
         .modal {
@@ -187,6 +203,10 @@
                 <option value="lazy_mode">全自動懶人模式 (指向 > 目標 > 索敵 > 跟隨)</option>
             </select>
 
+            <div id="lazyWarning" class="warning-box">
+                ⚠️ <strong>注意：</strong>這種模式包含多種自動換目標指令，連點時會導致<strong>鎖定目標頻繁跳動</strong>，無法穩定對單一目標輸出，請慎重使用。
+            </div>
+
             <textarea id="dpsMacroOutput" rows="6" readonly></textarea>
             <button onclick="copyToClipboard('dpsMacroOutput', 'copyDpsBtn')" id="copyDpsBtn" class="copy-button" disabled>複製指令</button>
         </div>
@@ -194,7 +214,7 @@
         <hr>
 
         <div class="macro-section">
-            <h3>🎯 焦點目標 (Focus Target) 專區 <span class="help-icon" onclick="openModal('focusModal')">?</span></h3>
+            <h3>🎯 焦點模式 (Focus Target) 專區 <span class="help-icon" onclick="openModal('focusModal')">?</span></h3>
             <div class="info-box">
                 <strong>用法：</strong>將 特定目標 設為焦點，即使當前沒有鎖定該目標也能一鍵施放技能。
             </div>
@@ -235,10 +255,8 @@
             <div style="font-size: 0.95em;">
                 <p><strong>1. 為什麼要設定焦點目標？</strong><br>
                 將主要敵人或隊友設為「焦點」，就像裝了 GPS，無論主目標如何切換，都能掌握焦點目標的狀況與讀條。</p>
-                
                 <p><strong>2. 焦點模式的好處：輔助與減傷</strong><br>
                 • <strong>不丟失攻擊節奏：</strong> 補職可將坦設為焦點，即便正盯著 BOSS 打，也能透過巨集一鍵對焦點目標施放減傷或治療，不需切換目標。</p>
-
                 <p><strong>3. 焦點模式的好處：攻擊與打斷</strong><br>
                 • <strong>精準打斷：</strong> 在場上有複數敵人時，將需打斷的目標設為焦點，一旦看到焦點目標讀條，一鍵按下去即自動施放打斷技，不必手忙腳亂找怪。</p>
             </div>
@@ -285,20 +303,15 @@
             const out = document.getElementById('healMacroOutput');
             const btn = document.getElementById('copyHealBtn');
             if(!skill) { out.value = ''; btn.disabled = true; return; }
-            
             let target = document.getElementById('targetType').value;
             if(target === 'numbered') target = document.getElementById('targetNumber').value;
-            
             let macro = `/micon ${skill}\n${M_ERR}`;
-            
             if(target === 'mo') {
-                // 指向優先，最後補上當前目標 <t> 作為備案
                 for(let i=0; i<3; i++) macro += `/ac ${skill} <mo>\n`;
                 macro += `/ac ${skill} <t>\n`; 
             } else {
                 macro += `/ac ${skill} <${target}>\n`;
             }
-
             if(document.getElementById('healEnableCountdown').checked) {
                 let cd = parseInt(document.getElementById('healCooldownTime').value);
                 if(cd >= 4) macro += `/wait ${cd-3}\n/e [${skill}] 剩 3 秒！ <se.${document.getElementById('healSoundEffect').value}>`;
@@ -311,6 +324,11 @@
             const out = document.getElementById('dpsMacroOutput');
             const btn = document.getElementById('copyDpsBtn');
             const mode = document.getElementById('dpsTargetMode').value;
+            
+            // 處理警示顯隱
+            const warningBox = document.getElementById('lazyWarning');
+            warningBox.style.display = (mode === 'lazy_mode') ? 'block' : 'none';
+
             if(!skill) { out.value = ''; btn.disabled = true; return; }
             let macro = `/micon ${skill}\n${M_ERR}`;
             if(mode === 'standard') { macro += `/targetenemy\n/ac ${skill}\n`; } 
