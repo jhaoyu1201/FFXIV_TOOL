@@ -285,14 +285,20 @@
             const out = document.getElementById('healMacroOutput');
             const btn = document.getElementById('copyHealBtn');
             if(!skill) { out.value = ''; btn.disabled = true; return; }
+            
             let target = document.getElementById('targetType').value;
             if(target === 'numbered') target = document.getElementById('targetNumber').value;
+            
             let macro = `/micon ${skill}\n${M_ERR}`;
+            
             if(target === 'mo') {
+                // 指向優先，最後補上當前目標 <t> 作為備案
                 for(let i=0; i<3; i++) macro += `/ac ${skill} <mo>\n`;
+                macro += `/ac ${skill} <t>\n`; 
             } else {
                 macro += `/ac ${skill} <${target}>\n`;
             }
+
             if(document.getElementById('healEnableCountdown').checked) {
                 let cd = parseInt(document.getElementById('healCooldownTime').value);
                 if(cd >= 4) macro += `/wait ${cd-3}\n/e [${skill}] 剩 3 秒！ <se.${document.getElementById('healSoundEffect').value}>`;
