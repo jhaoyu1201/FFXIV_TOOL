@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FFXIV 巨集指令產生器 (v10.2 Final)</title>
+    <title>FFXIV 巨集指令產生器 (v10.6 Multi-Modal)</title>
     <style>
-        /* 1. CSS 變數定義 */
+        /* CSS 變數 */
         :root {
             --bg-color-base: #f4f7f9;
             --pulse-color: #dbeaff;
@@ -42,14 +42,12 @@
             --main-button-bg: #ff80a6;
         }
 
-        /* 2. 呼吸光動畫 */
         @keyframes breathe {
             0% { background-color: var(--bg-color-base); }
             50% { background-color: var(--pulse-color); }
             100% { background-color: var(--bg-color-base); }
         }
 
-        /* 3. 版面配置 */
         body {
             font-family: 'Segoe UI', 'Microsoft JhengHei', Tahoma, sans-serif;
             color: var(--text-color);
@@ -70,7 +68,7 @@
         }
         
         h1 { text-align: center; margin-bottom: 30px; }
-        h3 { color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-top: 30px; }
+        h3 { color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-top: 30px; display: flex; align-items: center; }
         
         .macro-section { padding: 10px 0; margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: bold; }
@@ -79,9 +77,6 @@
             width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border-color);
             border-radius: 6px; box-sizing: border-box; background-color: var(--input-bg); color: var(--text-color);
         }
-
-        .countdown-container { border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 15px; background-color: var(--input-bg); }
-        .countdown-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
 
         button {
             background-color: var(--main-button-bg); color: white; padding: 10px 20px; border: none;
@@ -92,9 +87,31 @@
 
         textarea { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; background-color: var(--input-bg); color: var(--text-color); font-family: 'Consolas', monospace; resize: vertical; box-sizing: border-box; }
         .copy-button { background-color: var(--copy-button-bg); }
-        
+
+        /* 彈窗樣式 (Modal) */
+        .modal {
+            display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: var(--container-bg); margin: 10% auto; padding: 30px; border-radius: 15px;
+            max-width: 600px; width: 90%; position: relative; box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            max-height: 80vh; overflow-y: auto;
+        }
+        .close-modal {
+            position: absolute; right: 20px; top: 15px; font-size: 28px; font-weight: bold;
+            cursor: pointer; color: #aaa;
+        }
+        .close-modal:hover { color: var(--text-color); }
+        .help-icon {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 22px; height: 22px; background: var(--primary-color); color: white;
+            border-radius: 50%; font-size: 14px; cursor: pointer; margin-left: 10px;
+        }
+
+        .countdown-container { border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 15px; background-color: var(--input-bg); }
+        .countdown-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
         .info-box { background: rgba(0,0,0,0.05); padding: 15px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9em; border-left: 4px solid var(--primary-color); }
-        .tip-box { background: rgba(255, 193, 7, 0.1); padding: 10px; border-radius: 6px; font-size: 0.85em; border-left: 4px solid #ffc107; margin-top: 10px; }
         hr { border: 0; border-top: 1px solid var(--border-color); margin: 40px 0; }
     </style>
 </head>
@@ -113,7 +130,7 @@
         <h1>🛠️ FFXIV 巨集指令產生器</h1>
 
         <div class="macro-section">
-            <h3>🚑 治療技能巨集</h3>
+            <h3>🚑 治療技能巨集 <span class="help-icon" onclick="openModal('moModal')">?</span></h3>
             <label for="healSkillName">技能名稱：</label>
             <input type="text" id="healSkillName" placeholder="例如：再生, 野戰治療術">
 
@@ -134,7 +151,7 @@
                 <option value="mo">指向模式 (&lt;mo&gt;)</option>
                 <option value="me">自己 (&lt;me&gt;)</option>
                 <option value="t">當前目標 (&lt;t&gt;)</option>
-                <option value="numbered">隊伍編號 (1~8)</option>
+                <option value="numbered">隊員編號 (1~8)</option>
             </select>
             <div id="targetNumberContainer" style="display:none;">
                 <input type="number" id="targetNumber" min="1" max="8" value="1" style="width:70px !important;">
@@ -165,8 +182,9 @@
 
             <label>攻擊模式：</label>
             <select id="dpsTargetMode">
-                <option value="standard">標準 (/targetenemy)</option>
+                <option value="standard">標準模式 (/targetenemy)</option>
                 <option value="mo_fallback">指向優先 (&lt;mo&gt; &gt; &lt;t&gt;)</option>
+                <option value="lazy_mode">全自動懶人模式 (指向 > 目標 > 索敵 > 跟隨)</option>
             </select>
 
             <textarea id="dpsMacroOutput" rows="6" readonly></textarea>
@@ -176,11 +194,10 @@
         <hr>
 
         <div class="macro-section">
-            <h3>🎯 焦點目標 (Focus Target) 專區</h3>
+            <h3>🎯 焦點目標 (Focus Target) 專區 <span class="help-icon" onclick="openModal('focusModal')">?</span></h3>
             <div class="info-box">
-                <strong>用法：</strong>將 特定目標 設為焦點，即使當前沒有鎖定該目標也能及時對目標施放技能。
+                <strong>用法：</strong>將 特定目標 設為焦點，即使當前沒有鎖定該目標也能一鍵施放技能。
             </div>
-
             <label>步驟 1：快速設定焦點巨集</label>
             <textarea id="focusSetupMacro" rows="2" readonly>/focustarget <mo>
 /e 焦點已更新 ➔ <f> <se.15></textarea>
@@ -188,18 +205,58 @@
 
             <label style="margin-top:20px;">步驟 2：生成焦點優先技能</label>
             <input type="text" id="focusSkillName" placeholder="例如：打斷, 傷殘, 減傷" oninput="generateFocusMacro()">
-            
-            <div class="tip-box">
-                <strong>⚠️ 手感提醒：</strong>重複指令是為了抵銷延遲，請按 1-2 下即可，連打按鈕可能會微幅卡到下個技能。
-            </div>
-
             <textarea id="focusMacroOutput" rows="6" readonly></textarea>
             <button onclick="copyToClipboard('focusMacroOutput', 'copyFocusBtn')" id="copyFocusBtn" class="copy-button" disabled>複製指令</button>
         </div>
     </div>
 
+    <div id="moModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('moModal')">&times;</span>
+            <h2 style="color:var(--primary-color); margin-top:0;">💡 指向模式說明</h2>
+            <div style="font-size: 0.95em;">
+                <p><strong>1. 什麼是指向模式 (Mouseover)？</strong><br>
+                省去「左鍵點擊」動作，只要游標指著目標（或小隊名單），按下技能鍵就會直接發動。</p>
+                <p><strong>2. 指向模式的好處</strong><br>
+                • <strong>保持鎖定：</strong> 畫面中心可鎖定 BOSS 監控讀條，滑鼠只需在側面名單救人。<br>
+                • <strong>快速反應：</strong> 比傳統點擊更便利一點，可以靈活反應突發狀況。</p>
+                <p><strong>3. 操作小秘訣</strong><br>
+                • <strong>靈活操作：</strong> 滑鼠只需在「按下的瞬間」指著對象，技能發動後即可自由移開。<br>
+                • <strong>備案補充：</strong> 若滑鼠沒指著任何人，巨集會自動改對你「當前選中目標」施放。</p>
+            </div>
+            <button onclick="closeModal('moModal')" style="width:100%; margin-top:10px;">瞭解了!</button>
+        </div>
+    </div>
+
+    <div id="focusModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('focusModal')">&times;</span>
+            <h2 style="color:var(--primary-color); margin-top:0;">🎯 焦點模式 (Focus Target) 指南</h2>
+            <div style="font-size: 0.95em;">
+                <p><strong>1. 為什麼要設定焦點目標？</strong><br>
+                將主要敵人或隊友設為「焦點」，就像裝了 GPS，無論主目標如何切換，都能掌握焦點目標的狀況與讀條。</p>
+                
+                <p><strong>2. 焦點模式的好處：輔助與減傷</strong><br>
+                • <strong>不丟失攻擊節奏：</strong> 補職可將坦設為焦點，即便正盯著 BOSS 打，也能透過巨集一鍵對焦點目標施放減傷或治療，不需切換目標。</p>
+
+                <p><strong>3. 焦點模式的好處：攻擊與打斷</strong><br>
+                • <strong>精準打斷：</strong> 在場上有複數敵人時，將需打斷的目標設為焦點，一旦看到焦點目標讀條，一鍵按下去即自動施放打斷技，不必手忙腳亂找怪。</p>
+            </div>
+            <button onclick="closeModal('focusModal')" style="width:100%; margin-top:10px;">瞭解了!</button>
+        </div>
+    </div>
+
     <script>
-        // 通用複製功能
+        // 彈窗控制
+        function openModal(modalId) { document.getElementById(modalId).style.display = 'block'; }
+        function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+        window.onclick = function(event) {
+            if (event.target.className === 'modal') {
+                event.target.style.display = 'none';
+            }
+        }
+
+        // 複製與指令生成
         function copyToClipboard(elementId, buttonId) {
             const text = document.getElementById(elementId);
             const btn = document.getElementById(buttonId);
@@ -213,7 +270,6 @@
 
         const M_ERR = '/merror off\n';
 
-        // 初始化音效選單
         function initSounds(id) {
             const s = document.getElementById(id);
             for(let i=1; i<=16; i++) {
@@ -224,23 +280,19 @@
             s.value = 6;
         }
 
-        // 治療巨集邏輯
         function generateHeal() {
             const skill = document.getElementById('healSkillName').value.trim();
             const out = document.getElementById('healMacroOutput');
             const btn = document.getElementById('copyHealBtn');
             if(!skill) { out.value = ''; btn.disabled = true; return; }
-
             let target = document.getElementById('targetType').value;
             if(target === 'numbered') target = document.getElementById('targetNumber').value;
-            
             let macro = `/micon ${skill}\n${M_ERR}`;
             if(target === 'mo') {
                 for(let i=0; i<3; i++) macro += `/ac ${skill} <mo>\n`;
             } else {
                 macro += `/ac ${skill} <${target}>\n`;
             }
-
             if(document.getElementById('healEnableCountdown').checked) {
                 let cd = parseInt(document.getElementById('healCooldownTime').value);
                 if(cd >= 4) macro += `/wait ${cd-3}\n/e [${skill}] 剩 3 秒！ <se.${document.getElementById('healSoundEffect').value}>`;
@@ -248,21 +300,20 @@
             out.value = macro.trim(); btn.disabled = false;
         }
 
-        // 攻擊巨集邏輯
         function generateDps() {
             const skill = document.getElementById('dpsSkillName').value.trim();
             const out = document.getElementById('dpsMacroOutput');
             const btn = document.getElementById('copyDpsBtn');
+            const mode = document.getElementById('dpsTargetMode').value;
             if(!skill) { out.value = ''; btn.disabled = true; return; }
-
             let macro = `/micon ${skill}\n${M_ERR}`;
-            if(document.getElementById('dpsTargetMode').value === 'standard') {
-                macro += `/targetenemy\n/ac ${skill}\n`;
-            } else {
+            if(mode === 'standard') { macro += `/targetenemy\n/ac ${skill}\n`; } 
+            else if(mode === 'mo_fallback') {
                 for(let i=0; i<3; i++) macro += `/ac ${skill} <mo>\n`;
                 macro += `/ac ${skill} <t>\n`;
+            } else if(mode === 'lazy_mode') {
+                macro += `/ac ${skill} <mo>\n/ac ${skill} <t>\n/targetenemy\n/ac ${skill} <t>\n/as <2>\n/ac ${skill} <t>\n`;
             }
-
             if(document.getElementById('dpsEnableCountdown').checked) {
                 let cd = parseInt(document.getElementById('dpsCooldownTime').value);
                 if(cd >= 4) macro += `/wait ${cd-3}\n/e [${skill}] 剩 3 秒！ <se.${document.getElementById('dpsSoundEffect').value}>`;
@@ -270,32 +321,25 @@
             out.value = macro.trim(); btn.disabled = false;
         }
 
-        // 焦點巨集邏輯
         function generateFocusMacro() {
             const skill = document.getElementById('focusSkillName').value.trim();
             const out = document.getElementById('focusMacroOutput');
             const btn = document.getElementById('copyFocusBtn');
             if(!skill) { out.value = ''; btn.disabled = true; return; }
-
             let macro = `/micon ${skill}\n${M_ERR}`;
             for(let i=0; i<3; i++) macro += `/ac ${skill} <f>\n`;
             macro += `/ac ${skill} <t>`;
             out.value = macro.trim(); btn.disabled = false;
         }
 
-        // 事件監聽
         const inputs = ['healSkillName', 'targetType', 'targetNumber', 'healEnableCountdown', 'healCooldownTime', 'healSoundEffect',
                       'dpsSkillName', 'dpsTargetMode', 'dpsEnableCountdown', 'dpsCooldownTime', 'dpsSoundEffect'];
-        
         inputs.forEach(id => {
             document.getElementById(id).addEventListener('input', () => { generateHeal(); generateDps(); });
         });
-
         document.getElementById('healEnableCountdown').addEventListener('change', e => document.getElementById('healCountdownSettings').style.display = e.target.checked ? 'block' : 'none');
         document.getElementById('dpsEnableCountdown').addEventListener('change', e => document.getElementById('dpsCountdownSettings').style.display = e.target.checked ? 'block' : 'none');
         document.getElementById('targetType').addEventListener('change', e => document.getElementById('targetNumberContainer').style.display = e.target.value === 'numbered' ? 'block' : 'none');
-
-        // 主題初始化
         document.getElementById('themeSelector').addEventListener('change', function() {
             document.body.setAttribute('data-theme', this.value);
             localStorage.setItem('ffxivMacroTheme', this.value);
@@ -310,4 +354,3 @@
     </script>
 </body>
 </html>
-
