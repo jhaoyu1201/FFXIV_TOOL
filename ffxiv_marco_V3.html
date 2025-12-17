@@ -3,68 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FFXIV 巨集指令產生器 (v10.1)</title>
+    <title>FFXIV 巨集指令產生器 (v10.2 Final)</title>
     <style>
-        /* 1. CSS 變數與基礎樣式 (沿用 v10.0) */
+        /* 1. CSS 變數定義 */
         :root {
-            --bg-color-base: #f4f7f9; --pulse-color: #dbeaff; --text-color: #333;
-            --container-bg: #fff; --border-color: #e0e0e0; --input-bg: #f9f9f9;
-            --primary-color: #1e88e5; --copy-button-bg: #f44336; --main-button-bg: #4CAF50;
-        }
-        body[data-theme="dark"] {
-            --bg-color-base: #222831; --pulse-color: #1a1e26; --text-color: #eeeeee;
-            --container-bg: #393e46; --border-color: #4f5358; --input-bg: #4a4e54;
-            --primary-color: #00adb5; --copy-button-bg: #ff9a3c; --main-button-bg: #764BA2;
-        }
-        body[data-theme="pink"] {
-            --bg-color-base: #fff0f5; --pulse-color: #ffe0ee; --text-color: #5d3954; 
-            --container-bg: #ffffff; --border-color: #ffc0cb; --input-bg: #ffe0ee;
-            --primary-color: #ff69b4; --copy-button-bg: #e91e63; --main-button-bg: #ff80a6;
+            --bg-color-base: #f4f7f9;
+            --pulse-color: #dbeaff;
+            --text-color: #333;
+            --container-bg: #fff;
+            --border-color: #e0e0e0;
+            --input-bg: #f9f9f9;
+            --primary-color: #1e88e5; 
+            --copy-button-bg: #f44336;
+            --main-button-bg: #4CAF50;
         }
 
+        body[data-theme="dark"] {
+            --bg-color-base: #222831;
+            --pulse-color: #1a1e26;
+            --text-color: #eeeeee;
+            --container-bg: #393e46;
+            --border-color: #4f5358;
+            --input-bg: #4a4e54;
+            --primary-color: #00adb5;
+            --copy-button-bg: #ff9a3c;
+            --main-button-bg: #764BA2;
+        }
+        
+        body[data-theme="pink"] {
+            --bg-color-base: #fff0f5;
+            --pulse-color: #ffe0ee;
+            --text-color: #5d3954; 
+            --container-bg: #ffffff;
+            --border-color: #ffc0cb; 
+            --input-bg: #ffe0ee;
+            --primary-color: #ff69b4; 
+            --copy-button-bg: #e91e63;
+            --main-button-bg: #ff80a6;
+        }
+
+        /* 2. 呼吸光動畫 */
         @keyframes breathe {
             0% { background-color: var(--bg-color-base); }
             50% { background-color: var(--pulse-color); }
             100% { background-color: var(--bg-color-base); }
         }
 
+        /* 3. 版面配置 */
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: var(--text-color); line-height: 1.6; padding: 20px;
-            max-width: 900px; margin: 0 auto; background-color: var(--bg-color-base);
-            animation: breathe 10s ease-in-out infinite; transition: color 0.3s;
+            font-family: 'Segoe UI', 'Microsoft JhengHei', Tahoma, sans-serif;
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: var(--bg-color-base);
+            animation: breathe 10s ease-in-out infinite;
+            transition: color 0.3s, background-color 0.3s;
         }
         
         .container {
-            background: var(--container-bg); padding: 30px; border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); transition: background-color 0.3s;
+            background: var(--container-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
         
-        h3 { color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-top: 25px; }
-        .macro-section { padding: 20px 0; margin-bottom: 30px; }
+        h1 { text-align: center; margin-bottom: 30px; }
+        h3 { color: var(--primary-color); border-bottom: 2px solid var(--border-color); padding-bottom: 10px; margin-top: 30px; }
+        
+        .macro-section { padding: 10px 0; margin-bottom: 20px; }
         label { display: block; margin-bottom: 8px; font-weight: bold; }
+
         input[type="text"], input[type="number"], select {
-            width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color);
+            width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--border-color);
             border-radius: 6px; box-sizing: border-box; background-color: var(--input-bg); color: var(--text-color);
         }
-        .countdown-container { border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 20px; background-color: var(--input-bg); }
-        button { background-color: var(--main-button-bg); color: white; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 16px; margin-top: 10px; transition: 0.3s; }
+
+        .countdown-container { border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 15px; background-color: var(--input-bg); }
+        .countdown-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+
+        button {
+            background-color: var(--main-button-bg); color: white; padding: 10px 20px; border: none;
+            border-radius: 6px; cursor: pointer; font-size: 16px; transition: 0.3s; margin-top: 5px;
+        }
         button:hover:not(:disabled) { filter: brightness(1.1); }
         button:disabled { background-color: #b0c4de; cursor: not-allowed; }
-        textarea { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; background-color: var(--input-bg); color: var(--text-color); font-family: monospace; resize: vertical; }
+
+        textarea { width: 100%; padding: 10px; margin-top: 10px; border-radius: 6px; background-color: var(--input-bg); color: var(--text-color); font-family: 'Consolas', monospace; resize: vertical; box-sizing: border-box; }
         .copy-button { background-color: var(--copy-button-bg); }
         
-        /* 提示框樣式 */
-        .info-box { background: rgba(0,0,0,0.05); padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9em; border-left: 4px solid var(--primary-color); }
-        .tip-box { background: rgba(255, 193, 7, 0.1); padding: 10px; border-radius: 6px; margin-top: 10px; font-size: 0.85em; border-left: 4px solid #ffc107; color: var(--text-color); }
+        .info-box { background: rgba(0,0,0,0.05); padding: 15px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9em; border-left: 4px solid var(--primary-color); }
+        .tip-box { background: rgba(255, 193, 7, 0.1); padding: 10px; border-radius: 6px; font-size: 0.85em; border-left: 4px solid #ffc107; margin-top: 10px; }
+        hr { border: 0; border-top: 1px solid var(--border-color); margin: 40px 0; }
     </style>
 </head>
 <body data-theme="light"> 
 
     <div class="container">
-        <div class="theme-selector" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
-            <label for="themeSelector" style="display: inline; margin-right: 15px;">🎨 選擇 UI 風格：</label>
-            <select id="themeSelector" style="width: auto; display: inline-block;">
+        <div style="text-align: right; margin-bottom: 10px;">
+            <label style="display: inline; margin-right: 10px;">🎨 風格：</label>
+            <select id="themeSelector" style="width: auto; display: inline-block; margin-bottom: 0;">
                 <option value="light">一般模式</option>
                 <option value="dark">深色模式</option>
                 <option value="pink">粉色模式</option>
@@ -72,81 +111,202 @@
         </div>
 
         <h1>🛠️ FFXIV 巨集指令產生器</h1>
-        <p>本工具旨在優化您的遊戲手感，特別針對延遲補償與焦點管理。</p>
+
+        <div class="macro-section">
+            <h3>🚑 治療技能巨集</h3>
+            <label for="healSkillName">技能名稱：</label>
+            <input type="text" id="healSkillName" placeholder="例如：再生, 野戰治療術">
+
+            <div class="countdown-container">
+                <label><input type="checkbox" id="healEnableCountdown"> 啟用冷卻倒數提醒</label>
+                <div id="healCountdownSettings" style="display:none; margin-top:10px;">
+                    <div class="countdown-row">
+                        <label>CD (秒)：</label>
+                        <input type="number" id="healCooldownTime" min="4" value="60" style="width:70px !important;">
+                        <label>音效：</label>
+                        <select id="healSoundEffect" style="width:70px !important;"></select>
+                    </div>
+                </div>
+            </div>
+
+            <label>目標邏輯：</label>
+            <select id="targetType">
+                <option value="mo">指向模式 (&lt;mo&gt;)</option>
+                <option value="me">自己 (&lt;me&gt;)</option>
+                <option value="t">當前目標 (&lt;t&gt;)</option>
+                <option value="numbered">隊伍編號 (1~8)</option>
+            </select>
+            <div id="targetNumberContainer" style="display:none;">
+                <input type="number" id="targetNumber" min="1" max="8" value="1" style="width:70px !important;">
+            </div>
+
+            <textarea id="healMacroOutput" rows="6" readonly></textarea>
+            <button onclick="copyToClipboard('healMacroOutput', 'copyHealBtn')" id="copyHealBtn" class="copy-button" disabled>複製指令</button>
+        </div>
+
+        <hr>
+
+        <div class="macro-section">
+            <h3>⚔️ 攻擊技能巨集</h3>
+            <label for="dpsSkillName">技能名稱：</label>
+            <input type="text" id="dpsSkillName" placeholder="例如：崩石, 勁風">
+            
+            <div class="countdown-container">
+                <label><input type="checkbox" id="dpsEnableCountdown"> 啟用冷卻倒數提醒</label>
+                <div id="dpsCountdownSettings" style="display:none; margin-top:10px;">
+                    <div class="countdown-row">
+                        <label>CD (秒)：</label>
+                        <input type="number" id="dpsCooldownTime" min="4" value="120" style="width:70px !important;">
+                        <label>音效：</label>
+                        <select id="dpsSoundEffect" style="width:70px !important;"></select>
+                    </div>
+                </div>
+            </div>
+
+            <label>攻擊模式：</label>
+            <select id="dpsTargetMode">
+                <option value="standard">標準 (/targetenemy)</option>
+                <option value="mo_fallback">指向優先 (&lt;mo&gt; &gt; &lt;t&gt;)</option>
+            </select>
+
+            <textarea id="dpsMacroOutput" rows="6" readonly></textarea>
+            <button onclick="copyToClipboard('dpsMacroOutput', 'copyDpsBtn')" id="copyDpsBtn" class="copy-button" disabled>複製指令</button>
+        </div>
 
         <hr>
 
         <div class="macro-section">
             <h3>🎯 焦點目標 (Focus Target) 專區</h3>
             <div class="info-box">
-                <strong>💡 什麼是焦點目標？</strong><br>
-                將 BOSS 或特定隊友設為焦點（Focus），即使當前目標在攻擊其他小怪，也能透過此巨集快速對「焦點」發動技能（如打斷技或減傷）。
+                <strong>用法：</strong>將 BOSS 設為焦點，即使當前在打小怪也能對 BOSS 施放技能。
             </div>
 
             <label>步驟 1：快速設定焦點巨集</label>
-            <div class="countdown-container">
-                <p style="margin-top:0; font-size: 0.9em; opacity: 0.8;">用法：滑鼠指向目標按此鍵，即設為焦點。</p>
-                <textarea id="focusSetupMacro" rows="2" readonly>/focustarget <mo>
-/e 焦點目標已更新 ➔ <f> <se.15></textarea>
-                <button onclick="copyToClipboard('focusSetupMacro', 'copySetupBtn')" id="copySetupBtn" class="copy-button">複製設定指令</button>
-            </div>
+            <textarea id="focusSetupMacro" rows="2" readonly>/focustarget <mo>
+/e 焦點已更新 ➔ <f> <se.15></textarea>
+            <button onclick="copyToClipboard('focusSetupMacro', 'copySetBtn')" id="copySetBtn" class="copy-button">複製設定指令</button>
 
-            <label for="focusSkillName">步驟 2：生成「焦點優先」技能巨集</label>
-            <input type="text" id="focusSkillName" placeholder="例如：傷殘, 插槽技能, 救療" oninput="generateFocusMacro()">
+            <label style="margin-top:20px;">步驟 2：生成焦點優先技能</label>
+            <input type="text" id="focusSkillName" placeholder="例如：打斷, 傷殘, 減傷" oninput="generateFocusMacro()">
             
             <div class="tip-box">
-                <strong>⚠️ 手感提醒：</strong><br>
-                為補償延遲，產生的巨集包含重複指令。施放時請保持平常節奏（按 1-2 下即可），過度狂按巨集可能會導致微小的動畫硬直（卡 GCD）。
+                <strong>⚠️ 手感提醒：</strong>重複指令是為了抵銷延遲，請按 1-2 下即可，連打按鈕可能會微幅卡到下個技能。
             </div>
 
-            <p style="font-style: italic; opacity: 0.7; margin-top: 15px; font-size: 0.9em;">生成結果：</p>
             <textarea id="focusMacroOutput" rows="6" readonly></textarea>
-            <button onclick="copyToClipboard('focusMacroOutput', 'copyFocusButton')" id="copyFocusButton" class="copy-button" disabled>複製指令</button>
+            <button onclick="copyToClipboard('focusMacroOutput', 'copyFocusBtn')" id="copyFocusBtn" class="copy-button" disabled>複製指令</button>
         </div>
-
-        </div>
+    </div>
 
     <script>
+        // 通用複製功能
         function copyToClipboard(elementId, buttonId) {
-            const copyText = document.getElementById(elementId);
-            const button = document.getElementById(buttonId);
-            const originalText = button.textContent;
-            copyText.select();
-            navigator.clipboard.writeText(copyText.value).then(() => {
-                button.textContent = '✅ 已複製！';
-                setTimeout(() => { button.textContent = originalText; }, 2000);
+            const text = document.getElementById(elementId);
+            const btn = document.getElementById(buttonId);
+            const original = btn.textContent;
+            text.select();
+            navigator.clipboard.writeText(text.value).then(() => {
+                btn.textContent = '✅ 已複製！';
+                setTimeout(() => btn.textContent = original, 2000);
             });
         }
 
-        function generateFocusMacro() {
-            const skill = document.getElementById('focusSkillName').value.trim();
-            const output = document.getElementById('focusMacroOutput');
-            const btn = document.getElementById('copyFocusButton');
-            
-            if (!skill) {
-                output.value = ''; btn.disabled = true; return;
+        const M_ERR = '/merror off\n';
+
+        // 初始化音效選單
+        function initSounds(id) {
+            const s = document.getElementById(id);
+            for(let i=1; i<=16; i++) {
+                let opt = document.createElement('option');
+                opt.value = i; opt.textContent = i;
+                s.appendChild(opt);
             }
-            
-            let macro = `/micon ${skill}\n/merror off\n`;
-            // 重複三次以對抗延遲，提高「塞進 GCD 縫隙」的機率
-            macro += `/ac ${skill} <f>\n/ac ${skill} <f>\n/ac ${skill} <f>\n`;
-            macro += `/ac ${skill} <t>`;
-            
-            output.value = macro.trim();
-            btn.disabled = false;
+            s.value = 6;
         }
 
-        // 主題切換邏輯
+        // 治療巨集邏輯
+        function generateHeal() {
+            const skill = document.getElementById('healSkillName').value.trim();
+            const out = document.getElementById('healMacroOutput');
+            const btn = document.getElementById('copyHealBtn');
+            if(!skill) { out.value = ''; btn.disabled = true; return; }
+
+            let target = document.getElementById('targetType').value;
+            if(target === 'numbered') target = document.getElementById('targetNumber').value;
+            
+            let macro = `/micon ${skill}\n${M_ERR}`;
+            if(target === 'mo') {
+                for(let i=0; i<3; i++) macro += `/ac ${skill} <mo>\n`;
+            } else {
+                macro += `/ac ${skill} <${target}>\n`;
+            }
+
+            if(document.getElementById('healEnableCountdown').checked) {
+                let cd = parseInt(document.getElementById('healCooldownTime').value);
+                if(cd >= 4) macro += `/wait ${cd-3}\n/e [${skill}] 剩 3 秒！ <se.${document.getElementById('healSoundEffect').value}>`;
+            }
+            out.value = macro.trim(); btn.disabled = false;
+        }
+
+        // 攻擊巨集邏輯
+        function generateDps() {
+            const skill = document.getElementById('dpsSkillName').value.trim();
+            const out = document.getElementById('dpsMacroOutput');
+            const btn = document.getElementById('copyDpsBtn');
+            if(!skill) { out.value = ''; btn.disabled = true; return; }
+
+            let macro = `/micon ${skill}\n${M_ERR}`;
+            if(document.getElementById('dpsTargetMode').value === 'standard') {
+                macro += `/targetenemy\n/ac ${skill}\n`;
+            } else {
+                for(let i=0; i<3; i++) macro += `/ac ${skill} <mo>\n`;
+                macro += `/ac ${skill} <t>\n`;
+            }
+
+            if(document.getElementById('dpsEnableCountdown').checked) {
+                let cd = parseInt(document.getElementById('dpsCooldownTime').value);
+                if(cd >= 4) macro += `/wait ${cd-3}\n/e [${skill}] 剩 3 秒！ <se.${document.getElementById('dpsSoundEffect').value}>`;
+            }
+            out.value = macro.trim(); btn.disabled = false;
+        }
+
+        // 焦點巨集邏輯
+        function generateFocusMacro() {
+            const skill = document.getElementById('focusSkillName').value.trim();
+            const out = document.getElementById('focusMacroOutput');
+            const btn = document.getElementById('copyFocusBtn');
+            if(!skill) { out.value = ''; btn.disabled = true; return; }
+
+            let macro = `/micon ${skill}\n${M_ERR}`;
+            for(let i=0; i<3; i++) macro += `/ac ${skill} <f>\n`;
+            macro += `/ac ${skill} <t>`;
+            out.value = macro.trim(); btn.disabled = false;
+        }
+
+        // 事件監聽
+        const inputs = ['healSkillName', 'targetType', 'targetNumber', 'healEnableCountdown', 'healCooldownTime', 'healSoundEffect',
+                      'dpsSkillName', 'dpsTargetMode', 'dpsEnableCountdown', 'dpsCooldownTime', 'dpsSoundEffect'];
+        
+        inputs.forEach(id => {
+            document.getElementById(id).addEventListener('input', () => { generateHeal(); generateDps(); });
+        });
+
+        document.getElementById('healEnableCountdown').addEventListener('change', e => document.getElementById('healCountdownSettings').style.display = e.target.checked ? 'block' : 'none');
+        document.getElementById('dpsEnableCountdown').addEventListener('change', e => document.getElementById('dpsCountdownSettings').style.display = e.target.checked ? 'block' : 'none');
+        document.getElementById('targetType').addEventListener('change', e => document.getElementById('targetNumberContainer').style.display = e.target.value === 'numbered' ? 'block' : 'none');
+
+        // 主題初始化
         document.getElementById('themeSelector').addEventListener('change', function() {
             document.body.setAttribute('data-theme', this.value);
             localStorage.setItem('ffxivMacroTheme', this.value);
         });
 
-        window.addEventListener('load', () => {
-            const saved = localStorage.getItem('ffxivMacroTheme') || 'light';
-            document.body.setAttribute('data-theme', saved);
-            document.getElementById('themeSelector').value = saved;
-        });
+        window.onload = () => {
+            initSounds('healSoundEffect'); initSounds('dpsSoundEffect');
+            const theme = localStorage.getItem('ffxivMacroTheme') || 'light';
+            document.body.setAttribute('data-theme', theme);
+            document.getElementById('themeSelector').value = theme;
+        };
     </script>
 </body>
 </html>
