@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>FFXIV 動態選單巨集產生器</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; max-width: 650px; margin: 40px auto; padding: 20px; line-height: 1.6; background-color: #f0f2f5; }
+        .container { border: 1px solid #ddd; padding: 30px; border-radius: 12px; background: white; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        
+        .logic-folder { margin-bottom: 25px; border: 1px solid #e0e0e0; border-radius: 6px; overflow: hidden; }
+        .logic-header { background: #f8f9fa; padding: 12px 15px; cursor: pointer; display: flex; justify-content: space-between; font-weight: bold; color: #3498db; }
+        .logic-content { display: none; padding: 20px; background: #fff; border-top: 1px solid #e0e0e0; }
+        .step-box { background: #f0f7ff; border-left: 4px solid #3498db; padding: 10px 15px; margin-bottom: 15px; font-size: 0.95em; }
+
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; margin-bottom: 5px; color: #34495e; }
+        input[type="number"], input[type="text"] { width: 100%; padding: 10px; border: 1px solid #bdc3c7; border-radius: 4px; box-sizing: border-box; }
+        
+        .options-group { background: #fdfdfd; padding: 15px; border: 1px dashed #3498db; border-radius: 8px; margin: 20px 0; }
+        .default-hint { font-size: 0.85em; color: #e67e22; margin-top: 10px; font-weight: bold; display: block; }
+
+        .result-section { position: relative; margin-top: 20px; display: none; }
+        .result-title { font-size: 0.9em; font-weight: bold; color: #e67e22; margin-bottom: 5px; }
+        .code-box { background: #1e1e1e; color: #dcdcdc; padding: 15px; border-radius: 6px; white-space: pre-wrap; font-family: "Consolas", monospace; font-size: 1.05em; border-left: 5px solid #3498db; margin-bottom: 10px; }
+        
+        .btn-primary { background: #3498db; color: white; border: none; padding: 12px; border-radius: 4px; cursor: pointer; width: 100%; font-size: 1.1em; font-weight: bold; }
+        .btn-copy { position: absolute; top: 30px; right: 10px; background: #27ae60; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.85em; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>FFXIV 抽屜選單巨集產生器</h2>
+
+    <div class="logic-folder">
+        <div class="logic-header" onclick="toggleLogic()">
+            <span>📖 製作教學與原理 (點擊展開)</span>
+            <span id="logic-arrow">▼</span>
+        </div>
+        <div id="logic-content" class="logic-content">
+            <h3 style="margin-top:0;">🛠️ 三步打造你的動態抽屜</h3>
+            <div class="step-box"><b>1. 指定顯示區：</b>選定一個「公用快捷欄」（例如：Hotbar 9）並清空它。</div>
+            <div class="step-box"><b>2. 佈置後台倉庫：</b>切換到不用的職業（如：刻木匠），在某一欄排好按鈕。</div>
+            <div class="step-box"><b>3. 產生巨集：</b>輸入資訊並將指令複製到主畫面的巨集欄位。</div>
+        </div>
+    </div>
+    
+    <div class="input-group">
+        <label>1. 顯示位置（公用快捷欄編號）</label>
+        <input type="number" id="displayNum" placeholder="請輸入編號（例如：9）">
+    </div>
+    <div class="input-group">
+        <label>2. 後台職業（倉庫職業名稱）</label>
+        <input type="text" id="storageJob" placeholder="例如：刻木匠 或 CRP">
+    </div>
+    <div class="input-group">
+        <label>3. 內容所在欄位（倉庫的第幾欄）</label>
+        <input type="number" id="storageNum" placeholder="例如：1">
+    </div>
+
+    <div class="options-group">
+        <strong>進階功能：</strong>
+        <div style="margin-top: 10px;">
+            <input type="checkbox" id="enableAutoClose" onchange="toggleSettings()">
+            <label for="enableAutoClose" style="cursor:pointer;">A. 自動關閉（幾秒後自動隱藏）</label>
+            <span id="autoCloseInput" style="display:none; margin-left: 10px;">
+                <input type="number" id="waitSec" value="5" style="width: 50px;"> 秒
+            </span>
+        </div>
+        <div style="margin-top: 8px;">
+            <input type="checkbox" id="enableCloseBtn">
+            <label for="enableCloseBtn" style="cursor:pointer;">B. 產生「手動關閉」按鈕指令</label>
+        </div>
+        <span class="default-hint">※ 註：若未勾選 A 選項，預設邏輯為「點一下開啟，再點一下關閉」。</span>
+    </div>
+
+    <button class="btn-primary" onclick="generateMacro()">生成巨集</button>
+
+    <div id="main-result" class="result-section">
+        <div class="result-title">★ 主觸發巨集</div>
+        <button class="btn-copy" onclick="copyText('main-code', this)">複製</button>
+        <div id="main-code" class="code-box"></div>
+    </div>
+
+    <div id="close-result" class="result-section">
+        <div class="result-title">★ 手動關閉指令</div>
+        <button class="btn-copy" onclick="copyText('close-code', this)">複製</button>
+        <div id="close-code" class="code-box"></div>
+    </div>
+</div>
+
+<script>
+function toggleSettings() {
+    document.getElementById('autoCloseInput').style.display = document.getElementById('enableAutoClose').checked ? 'inline' : 'none';
+}
+
+function toggleLogic() {
+    const content = document.getElementById('logic-content');
+    const isHidden = content.style.display === 'none' || content.style.display === '';
+    content.style.display = isHidden ? 'block' : 'none';
+    document.getElementById('logic-arrow').innerText = isHidden ? '▲' : '▼';
+}
+
+function generateMacro() {
+    const dNum = document.getElementById('displayNum').value;
+    const sJob = document.getElementById('storageJob').value;
+    const sNum = document.getElementById('storageNum').value;
+    const enableAuto = document.getElementById('enableAutoClose').checked;
+    const wait = document.getElementById('waitSec').value;
+    
+    if(!dNum || !sJob || !sNum) return alert("請完整填寫資訊");
+
+    let main = `/hotbar copy ${sJob} ${sNum} share ${dNum}\n`;
+    if(enableAuto) {
+        main += `/hotbar display ${dNum} on <wait.${wait}>\n/hotbar display ${dNum} off`;
+    } else {
+        main += `/hotbar display ${dNum}`;
+    }
+    
+    document.getElementById('main-code').innerText = main;
+    document.getElementById('main-result').style.display = 'block';
+
+    if(document.getElementById('enableCloseBtn').checked) {
+        document.getElementById('close-code').innerText = `/hotbar display ${dNum} off`;
+        document.getElementById('close-result').style.display = 'block';
+    } else {
+        document.getElementById('close-result').style.display = 'none';
+    }
+}
+
+async function copyText(id, btn) {
+    const txt = document.getElementById(id).innerText;
+    await navigator.clipboard.writeText(txt);
+    const oldText = btn.innerText;
+    btn.innerText = "已複製！";
+    setTimeout(() => btn.innerText = oldText, 2000);
+}
+</script>
+
+</body>
+</html>
