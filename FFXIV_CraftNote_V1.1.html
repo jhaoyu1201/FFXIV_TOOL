@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFXIV 生產筆記</title>
+    <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/full.js"></script>
+    <style>
+        :root {
+            /* 風格 A: 預設暗色 */
+            --main-bg: #1e1e26; --card-bg: rgba(255, 255, 255, 0.05);
+            --accent: #f39c12; --text-main: #ffffff; --text-sub: #a0a0a0;
+            --border: rgba(255, 255, 255, 0.1); --item-bg: rgba(0, 0, 0, 0.2);
+            --modal-bg: #25252e;
+        }
+        [data-theme="styleB"] { 
+            /* 風格 B: 神祕黑紫 */
+            --main-bg: #0d0b16; --card-bg: rgba(30, 20, 50, 0.6);
+            --accent: #a349ff; --text-main: #e0d0ff; --text-sub: #8e7fb0;
+            --border: rgba(163, 73, 255, 0.4); --item-bg: rgba(20, 10, 35, 0.8);
+            --modal-bg: #130d1f;
+        }
+        [data-theme="styleC"] { 
+            --main-bg: #fff5f7; --card-bg: #ffffff; --accent: #ff85a2;
+            --text-main: #6d4c41; --text-sub: #bcaaa4; --border: #fce4ec; --item-bg: #fffafb;
+            --modal-bg: #ffffff;
+        }
+        [data-theme="styleD"] { 
+            --main-bg: #f8f6f1; --card-bg: #ffffff; --accent: #c2a688;
+            --text-main: #333333; --text-sub: #888888; --border: #e0ddd5; --item-bg: #fdfdfc;
+            --modal-bg: #ffffff;
+        }
+        [data-theme="styleE"] { 
+            /* 風格 E: 深層護眼 */
+            --main-bg: #1a1a1a; --card-bg: #242424; --accent: #d4a76a;
+            --text-main: #cfcfcf; --text-sub: #888888; --border: #333333; --item-bg: #1f1f1f;
+            --modal-bg: #222222;
+        }
+
+        * { box-sizing: border-box; transition: background 0.3s, color 0.3s, border 0.3s; }
+        body { font-family: "Noto Sans TC", sans-serif; background-color: var(--main-bg); color: var(--text-main); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 900px; }
+
+        header { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid var(--border); padding-bottom: 15px; }
+        h1 { font-size: 1.4em; color: var(--accent); margin: 0; display: flex; align-items: center; gap: 8px; }
+
+        .theme-switcher { display: flex; align-items: center; gap: 10px; background: var(--card-bg); padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .theme-btn { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 1.2em; font-weight: bold; padding: 0 5px; outline: none; }
+        .theme-label { font-size: 0.85em; min-width: 80px; text-align: center; font-weight: 500; }
+
+        .help-trigger { cursor: pointer; font-size: 0.6em; background: var(--card-bg); padding: 4px 10px; border-radius: 50px; border: 1px solid var(--border); }
+
+        .glass-panel { background: var(--card-bg); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+        
+        /* Tab 切換器樣式 */
+        .tab-header { display: flex; gap: 10px; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .tab-link { cursor: pointer; font-size: 0.9em; opacity: 0.6; padding: 5px 10px; border-radius: 6px; }
+        .tab-link.active { opacity: 1; background: var(--accent); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .input-group { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        input, select { background: var(--item-bg); border: 1px solid var(--border); color: var(--text-main); padding: 10px; border-radius: 8px; outline: none; flex: 1; }
+        .btn-prime { background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        .category-block { margin-bottom: 20px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+        .category-head { background: var(--card-bg); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; border-bottom: 1px solid var(--border); }
+        .item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; padding: 15px; }
+        .item-card { background: var(--item-bg); padding: 15px; border-radius: 10px; border: 1px solid var(--border); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        
+        .card-actions { display: flex; gap: 5px; margin-top: 12px; }
+        .action-btn { flex: 1; padding: 6px; border-radius: 6px; font-size: 0.8em; text-align: center; text-decoration: none; background: rgba(255,255,255,0.05); color: var(--text-main); border: 1px solid var(--border); cursor: pointer; display: flex; justify-content: center; align-items: center; }
+        .action-btn.price-icon { background: #27ae60; border: none; flex: 0 0 45px; font-size: 1.1em; color: white; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: none; justify-content: center; align-items: center; z-index: 2000; backdrop-filter: blur(5px); }
+        .modal { background: var(--modal-bg); width: 90%; max-width: 480px; padding: 25px; border-radius: 15px; border: 1px solid var(--accent); color: var(--text-main); }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        
+        .price-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding: 10px; background: rgba(255,255,255,0.03); border-radius: 8px; }
+        .price-row input { width: 140px; padding: 6px; text-align: right; background: #000; border: 1px solid #444; color: #00ff00; font-family: monospace; }
+
+        .et-pendant { position: fixed; bottom: 20px; right: 20px; background: var(--accent); color: white; padding: 8px 15px; border-radius: 30px; font-weight: bold; z-index: 1000; font-size: 0.9em; pointer-events: none; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+    </style>
+</head>
+<body data-theme="styleA">
+
+<div class="container">
+    <header>
+        <h1>
+            FFXIV 生產筆記 
+            <div class="help-trigger" onclick="openModal('helpModal')">❓ 使用說明</div>
+        </h1>
+        <div class="theme-switcher">
+            <button class="theme-btn" onclick="prevTheme()">◀</button>
+            <div class="theme-label" id="currentThemeLabel">風格 A</div>
+            <button class="theme-btn" onclick="nextTheme()">▶</button>
+        </div>
+    </header>
+
+    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 15px;">
+        <button class="action-btn" style="max-width:80px;" onclick="exportData()">📤 備份</button>
+        <button class="action-btn" style="max-width:80px;" onclick="document.getElementById('fileInput').click()">📥 匯入</button>
+        <input type="file" id="fileInput" style="display:none" onchange="importData(event)">
+    </div>
+
+    <div class="glass-panel">
+        <div class="input-group">
+            <input type="text" id="newCatName" placeholder="第一步：建立分類清單 (例如: 7.0 採集)">
+            <button class="btn-prime" onclick="addCategory()">建立分類</button>
+        </div>
+
+        <div class="tab-header">
+            <span class="tab-link active" onclick="switchTab('smart')">✨ 智慧添加</span>
+            <span class="tab-link" onclick="switchTab('manual')">✍️ 手動添加</span>
+        </div>
+
+        <div id="smart-tab" class="tab-content active">
+            <div class="input-group">
+                <select class="cat-select"></select>
+                <input type="text" id="smartName" placeholder="輸入繁體名稱 (自動產生 Wiki 連結)">
+                <button class="btn-prime" onclick="addItem('smart')">加入</button>
+            </div>
+        </div>
+
+        <div id="manual-tab" class="tab-content">
+            <div class="input-group">
+                <select class="cat-select"></select>
+                <input type="text" id="manualName" placeholder="物品名稱">
+                <input type="text" id="manualUrl" placeholder="自訂連結 (http://...)">
+                <button class="btn-prime" onclick="addItem('manual')">加入</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainDisplay"></div>
+</div>
+
+<div id="priceModal" class="modal-overlay" onclick="closeModal('priceModal')">
+    <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 id="modalPriceTitle" style="margin:0;">跨服物價</h3>
+            <span style="cursor:pointer; font-size:1.5em;" onclick="closeModal('priceModal')">×</span>
+        </div>
+        <div id="serverPriceList"></div>
+        <button class="btn-prime" style="width:100%; margin-top:20px; background:#27ae60;" onclick="savePrices()">儲存紀錄</button>
+    </div>
+</div>
+
+<div id="helpModal" class="modal-overlay" onclick="closeModal('helpModal')">
+    <div class="modal" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 style="margin:0;">功能完全指南</h3>
+            <span style="cursor:pointer; font-size:1.5em;" onclick="closeModal('helpModal')">×</span>
+        </div>
+        <div style="font-size:0.9em; line-height:1.7; max-height:450px; overflow-y:auto;">
+            <p>歡迎使用 <b>FFXIV 生產筆記</b>！</p>
+            <b>1. 添加模式說明</b><br>
+            • <b>智慧添加</b>：輸入繁體名稱，系統會自動轉簡體並對應「灰機 Wiki」。<br>
+            • <b>手動添加</b>：可自定義物品名稱與點擊後的跳轉網址。<br><br>
+            <b>2. 風格切換</b><br>
+            • 右上角可切換 5 種風格。包含黑紫與護眼模式。<br><br>
+            <b>3. 價格與功能</b><br>
+            • <span style="background:rgba(255,255,255,0.1); padding:2px 5px; border-radius:4px;">💰</span>：記錄各伺服器最新的 Gil 價格。<br>
+            • <span style="background:rgba(255,255,255,0.1); padding:2px 5px; border-radius:4px;">📋</span>：複製名稱方便遊戲內搜尋。<br><br>
+            <b>4. 資料備份</b><br>
+            • 請定期使用 <b>📤 備份</b> 下載 JSON 檔，以免瀏覽器清除緩存導致資料遺失。
+        </div>
+        <button class="btn-prime" style="width:100%; margin-top:20px;" onclick="closeModal('helpModal')">開始製作！</button>
+    </div>
+</div>
+
+<div class="et-pendant" id="et-clock">ET 00:00</div>
+
+<script>
+    const SERVERS = ["伊弗利特", "迦樓羅", "利維坦", "鳳凰", "巴哈姆特", "奧汀", "泰坦"];
+    const THEMES = [
+        { id: "styleA", name: "風格 A" }, 
+        { id: "styleB", name: "風格 B (黑紫)" },
+        { id: "styleC", name: "風格 C" }, 
+        { id: "styleD", name: "風格 D" },
+        { id: "styleE", name: "風格 E (護眼)" }
+    ];
+    
+    let db = { categories: [], items: [], theme: 'styleA' };
+    const STORAGE_KEY = 'ff14_final_pro_note_v6'; // 更新 Key 避免舊版干擾
+    let currentEditingItemId = null;
+    let converter;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if(saved) db = JSON.parse(saved);
+        updateThemeUI();
+        try { if (typeof OpenCC !== 'undefined') converter = OpenCC.Converter({ from: 'hk', to: 'cn' }); } catch(e){}
+        render();
+        setInterval(updateET, 1000);
+    });
+
+    function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+
+    function switchTab(type) {
+        document.querySelectorAll('.tab-link, .tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelector(`.tab-link[onclick="switchTab('${type}')"]`).classList.add('active');
+        document.getElementById(`${type}-tab`).classList.add('active');
+    }
+
+    function updateThemeUI() {
+        document.body.setAttribute('data-theme', db.theme);
+        const themeObj = THEMES.find(t => t.id === db.theme);
+        document.getElementById('currentThemeLabel').innerText = themeObj ? themeObj.name : "風格 A";
+        save();
+    }
+
+    function nextTheme() {
+        let idx = THEMES.findIndex(t => t.id === db.theme);
+        idx = (idx + 1) % THEMES.length;
+        db.theme = THEMES[idx].id;
+        updateThemeUI();
+    }
+
+    function prevTheme() {
+        let idx = THEMES.findIndex(t => t.id === db.theme);
+        idx = (idx - 1 + THEMES.length) % THEMES.length;
+        db.theme = THEMES[idx].id;
+        updateThemeUI();
+    }
+
+    function addCategory() {
+        const name = document.getElementById('newCatName').value.trim();
+        if (name && !db.categories.includes(name)) {
+            db.categories.push(name);
+            document.getElementById('newCatName').value = '';
+            save(); render();
+        }
+    }
+
+    function addItem(mode) {
+        // 抓取當前分頁內的 select
+        const tabId = `${mode}-tab`;
+        const cat = document.querySelector(`#${tabId} .cat-select`).value;
+        if(!cat) return alert("⚠️ 請先選擇分類！");
+
+        let name, url;
+        if(mode === 'smart') {
+            name = document.getElementById('smartName').value.trim();
+            if(!name) return alert("⚠️ 請輸入物品名稱！");
+            const simp = (converter) ? converter(name) : name;
+            url = `https://ff14.huijiwiki.com/wiki/物品:${encodeURIComponent(simp)}`;
+            document.getElementById('smartName').value = '';
+        } else {
+            name = document.getElementById('manualName').value.trim();
+            url = document.getElementById('manualUrl').value.trim() || "#";
+            if(!name) return alert("⚠️ 請輸入物品名稱！");
+            document.getElementById('manualName').value = '';
+            document.getElementById('manualUrl').value = '';
+        }
+
+        let prices = {}; SERVERS.forEach(s => prices[s] = "");
+        db.items.push({ id: Date.now(), cat, name, url, prices });
+        save(); render();
+    }
+
+    function render() {
+        const display = document.getElementById('mainDisplay');
+        const selects = document.querySelectorAll('.cat-select');
+        display.innerHTML = '';
+        
+        // 更新所有選單
+        selects.forEach(sel => {
+            sel.innerHTML = '<option value="">-- 請選取分類 --</option>';
+            db.categories.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat; opt.innerText = cat;
+                sel.appendChild(opt);
+            });
+        });
+
+        db.categories.forEach(cat => {
+            const items = db.items.filter(i => i.cat === cat);
+            const block = document.createElement('div');
+            block.className = 'category-block';
+            block.innerHTML = `
+                <div class="category-head">
+                    <span>${cat} (${items.length})</span>
+                    <button class="action-btn" style="max-width:70px; border-color:var(--accent); color:var(--accent);" onclick="deleteCat('${cat}')">刪除</button>
+                </div>
+                <div class="item-grid">
+                    ${items.map(i => `
+                        <div class="item-card">
+                            <div style="font-weight:bold; margin-bottom:10px; border-left:3px solid var(--accent); padding-left:8px;">${i.name}</div>
+                            <div class="card-actions">
+                                <button class="action-btn price-icon" onclick="openPriceModal(${i.id})">💰</button>
+                                <a href="${i.url}" target="_blank" class="action-btn">Link</a>
+                                <button class="action-btn" onclick="copy('${i.name}')">📋</button>
+                                <button class="action-btn" onclick="deleteItem(${i.id})">🗑️</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>`;
+            display.appendChild(block);
+        });
+    }
+
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+    function openPriceModal(id) {
+        currentEditingItemId = id;
+        const item = db.items.find(i => i.id === id);
+        document.getElementById('modalPriceTitle').innerText = item.name;
+        const container = document.getElementById('serverPriceList');
+        container.innerHTML = '';
+        SERVERS.forEach(srv => {
+            const val = (item.prices && item.prices[srv]) ? item.prices[srv] : "";
+            container.innerHTML += `<div class="price-row"><span>${srv}</span><input type="number" class="price-input" data-srv="${srv}" value="${val}"></div>`;
+        });
+        openModal('priceModal');
+    }
+    function savePrices() {
+        const item = db.items.find(i => i.id === currentEditingItemId);
+        document.querySelectorAll('.price-input').forEach(input => { item.prices[input.dataset.srv] = input.value; });
+        save(); closeModal('priceModal');
+    }
+    function deleteCat(c) { if(confirm("確定刪除？")) { db.categories = db.categories.filter(x=>x!==c); db.items = db.items.filter(i=>i.cat!==c); save(); render(); } }
+    function deleteItem(id) { db.items = db.items.filter(i=>i.id !== id); save(); render(); }
+    function copy(t) { navigator.clipboard.writeText(t).then(() => alert("已複製: " + t)); }
+    function exportData() { const blob = new Blob([JSON.stringify(db)], {type:'application/json'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `FFXIV_Note.json`; a.click(); }
+    function importData(e) { const reader = new FileReader(); reader.onload = (x) => { db = JSON.parse(x.target.result); save(); location.reload(); }; reader.readAsText(e.target.files[0]); }
+    function updateET() { const et = new Date(Date.now() * (3600 / 175)); document.getElementById('et-clock').innerText = `ET ${String(et.getUTCHours()).padStart(2,'0')}:${String(et.getUTCMinutes()).padStart(2,'0')}`; }
+</script>
+</body>
+</html>
