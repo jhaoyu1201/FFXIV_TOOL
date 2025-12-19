@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="favicon.png" type="image/png">
     <title>FF14 冒險者便捷工具箱 - 專業客製版</title>
+    <script src="https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/full.js"></script>
     <style>
         body { 
             font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
@@ -13,26 +14,90 @@
         }
         #video-background { position: fixed; top: 50%; left: 50%; min-width: 100%; min-height: 100%; z-index: -3; transform: translate(-50%, -50%); object-fit: cover; }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: -2; }
+        
         header { text-align: center; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; }
         .header-main { display: flex; align-items: center; gap: 20px; margin-bottom: 10px; }
         .main-logo { width: 80px; height: 80px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(10, 132, 255, 0.5)); }
         h1 { color: #0a84ff; font-size: 2.8em; margin: 0; text-shadow: 0 0 20px rgba(10, 132, 255, 0.3); }
         .subtitle { color: #d1d1d6; font-size: 1.3em; animation: breathing-light 4s ease-in-out infinite; }
+        
         @keyframes breathing-light { 0%, 100% { opacity: 0.6; transform: scale(0.99); } 50% { opacity: 1; color: #ffffff; text-shadow: 0 0 15px rgba(10, 132, 255, 0.6); transform: scale(1); } }
 
-        .assistant-bar { display: flex; gap: 20px; margin-bottom: 40px; background: rgba(255, 255, 255, 0.05); padding: 15px 25px; border-radius: 50px; border: 1px solid rgba(255, 255, 255, 0.1); backdrop-filter: blur(5px); flex-wrap: wrap; justify-content: center; }
+        /* 助手功能列：Grid 布局左右分布 */
+        .assistant-bar { 
+            display: grid; grid-template-columns: 1fr 1fr; gap: 30px; 
+            margin-bottom: 40px; width: 100%; max-width: 1140px; 
+        }
+
+        .assistant-panel { 
+            background: rgba(255, 255, 255, 0.05); padding: 20px 25px; 
+            border-radius: 24px; border: 1px solid rgba(255, 255, 255, 0.1); 
+            backdrop-filter: blur(5px); display: flex; flex-direction: column; justify-content: center;
+        }
+
+        /* 左側：提醒區塊 */
+        .panel-left { gap: 15px; }
         .assistant-item { display: flex; align-items: center; gap: 12px; font-size: 0.95em; }
-        .assistant-icon { width: 28px; height: 28px; object-fit: contain; }
+        .assistant-icon { width: 24px; height: 24px; object-fit: contain; }
+        
+        /* 右側：搜尋區塊 */
+        .panel-right { gap: 10px; }
+        .search-row { display: flex; gap: 8px; align-items: center; }
+        .label-group { display: flex; align-items: center; gap: 6px; min-width: 85px; }
+        .label-text { font-size: 0.85em; color: #0a84ff; font-weight: bold; }
+        
+        /* 幫助問號小按鈕 */
+        .help-dot { 
+            width: 16px; height: 16px; background: rgba(10, 132, 255, 0.8); color: white; 
+            border-radius: 50%; font-size: 11px; display: flex; align-items: center; 
+            justify-content: center; cursor: pointer; border: none; font-weight: bold; transition: 0.3s;
+        }
+        .help-dot:hover { background: #0a84ff; transform: scale(1.1); }
+
+        .search-input { 
+            flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15); 
+            color: white; padding: 8px 12px; border-radius: 10px; outline: none; font-size: 0.9em; 
+        }
+        .search-input:focus { border-color: #0a84ff; background: rgba(10, 132, 255, 0.1); }
+        .search-btn { 
+            background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.2); 
+            padding: 8px 15px; border-radius: 10px; cursor: pointer; font-size: 0.85em; transition: 0.3s;
+        }
+        .search-btn:hover { background: #0a84ff; border-color: #0a84ff; }
+
+        /* 開關與輸入項樣式 */
         .switch { position: relative; display: inline-block; width: 40px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #3a3a3c; transition: .4s; border-radius: 34px; }
         .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #0a84ff; }
         input:checked + .slider:before { transform: translateX(18px); }
-        .timer-ctrl { display: flex; align-items: center; gap: 8px; }
+        .timer-ctrl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
         .timer-input { background: rgba(255,255,255,0.1); border: 1px solid #444; color: white; width: 45px; text-align: center; border-radius: 5px; padding: 2px; }
         .timer-btn { background: #0a84ff; color: white; border: none; padding: 4px 12px; border-radius: 5px; cursor: pointer; font-size: 0.85em; }
 
+        /* 彈窗樣式系統 */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+            display: none; justify-content: center; align-items: center; z-index: 1000;
+        }
+        .modal-content {
+            background: rgba(30, 30, 35, 0.95); border: 1px solid #0a84ff;
+            padding: 25px 30px; border-radius: 20px; max-width: 420px; width: 90%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); animation: modal-in 0.3s ease-out;
+        }
+        @keyframes modal-in { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-content h3 { color: #0a84ff; margin-top: 0; display: flex; align-items: center; gap: 10px; }
+        .modal-content ul { padding-left: 18px; color: #d1d1d6; line-height: 1.7; font-size: 0.95em; }
+        .modal-content li { margin-bottom: 12px; }
+        .close-modal {
+            background: #0a84ff; color: white; border: none; padding: 12px;
+            border-radius: 12px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 15px; transition: 0.3s;
+        }
+        .close-modal:hover { background: #0071e3; }
+
+        /* 底部工具卡片 */
         .container { width: 100%; max-width: 1200px; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 30px; padding-bottom: 80px; }
         .tool-card { background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 24px; aspect-ratio: 1/1; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: 30px; text-decoration: none; color: inherit; transition: 0.4s; box-shadow: 0 15px 35px rgba(0,0,0,0.3); }
         .tool-card:hover { transform: translateY(-12px); border-color: #0a84ff; background: rgba(255, 255, 255, 0.12); }
@@ -40,7 +105,10 @@
         .tool-card h3 { margin: 0; font-size: 1.4em; font-weight: 700; }
         .tool-card p { margin-top: 15px; font-size: 1em; color: #aeaeb2; line-height: 1.5; }
 
-        @media (max-width: 600px) { h1 { font-size: 2em; } .assistant-bar { flex-direction: column; border-radius: 20px; } }
+        @media (max-width: 900px) { 
+            .assistant-bar { grid-template-columns: 1fr; } 
+            h1 { font-size: 2em; }
+        }
     </style>
 </head>
 <body>
@@ -57,21 +125,67 @@
     </header>
 
     <div class="assistant-bar">
-        <div class="assistant-item">
-            <img src="assist_icon1.png" class="assistant-icon">
-            <span>活動提醒(偶數整點)</span>
-            <label class="switch"><input type="checkbox" id="eventSwitch"><span class="slider"></span></label>
-        </div>
-        <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2);"></div>
-        <div class="assistant-item">
-            <img src="assist_icon2.png" class="assistant-icon">
-            <span>雇員探險：</span>
-            <div class="timer-ctrl">
-                <input type="number" id="timerMin" class="timer-input" value="60" min="1">
-                <span>分</span>
-                <button class="timer-btn" id="startBtn">開始倒數</button>
-                <span id="displayTime" style="color: #0a84ff; font-weight: bold; min-width: 50px;"></span>
+        <div class="assistant-panel panel-left">
+            <div class="assistant-item">
+                <img src="assist_icon1.png" class="assistant-icon">
+                <div class="label-group">
+                    <span class="label-text" style="color:#f2f2f7;">活動提醒</span>
+                    <button class="help-dot" onclick="openModal('timerHelp')">?</button>
+                </div>
+                <label class="switch"><input type="checkbox" id="eventSwitch"><span class="slider"></span></label>
             </div>
+            <div class="assistant-item">
+                <img src="assist_icon2.png" class="assistant-icon">
+                <div class="timer-ctrl">
+                    <span>雇員探險：</span>
+                    <input type="number" id="timerMin" class="timer-input" value="60" min="1">
+                    <span>分</span>
+                    <button class="timer-btn" id="startBtn">開始倒數</button>
+                    <span id="displayTime" style="color: #0a84ff; font-weight: bold; margin-left:10px;"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="assistant-panel panel-right">
+            <div class="search-row">
+                <div class="label-group">
+                    <span class="label-text">物品搜尋</span>
+                    <button class="help-dot" onclick="openModal('searchHelp')">?</button>
+                </div>
+                <input type="text" id="itemInput" class="search-input" placeholder="輸入繁/簡名稱..." onkeypress="if(event.key==='Enter') quickSearch('物品')">
+                <button class="search-btn" onclick="quickSearch('物品')">搜尋</button>
+            </div>
+            <div class="search-row">
+                <div class="label-group">
+                    <span class="label-text">任務搜尋</span>
+                </div>
+                <input type="text" id="questInput" class="search-input" placeholder="輸入名稱..." onkeypress="if(event.key==='Enter') quickSearch('任务')">
+                <button class="search-btn" onclick="quickSearch('任务')">搜尋</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="searchHelp">
+        <div class="modal-content">
+            <h3>🔍 搜尋小幫手說明</h3>
+            <ul>
+                <li><b>自動轉換</b>：輸入繁體將自動轉換為簡體並導向灰機 Wiki。</li>
+                <li><b>查無結果</b>：可能是因為兩岸譯名不同（如副本或裝備全稱差異）。</li>
+                <li><b>解決方案</b>：若搜尋失敗，請嘗試使用關鍵字在搜尋引擎查找。</li>
+            </ul>
+            <button class="close-modal" onclick="closeModal('searchHelp')">我了解了</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="timerHelp">
+        <div class="modal-content">
+            <h3>⏰ 助手提醒說明</h3>
+            <ul>
+                <li><b>保持頁面開啟</b>：請確保本分頁維持開啟，不要關閉。</li>
+                <li><b>防止系統休眠</b>：若切換到後台，計時可能被瀏覽器暫停。建議將本頁單獨拉出視窗。</li>
+                <li><b>通知權限</b>：請在瀏覽器詢問時「允許通知」，否則僅會有音效提醒。</li>
+            </ul>
+            <button class="close-modal" onclick="closeModal('timerHelp')">我了解了</button>
         </div>
     </div>
 
@@ -125,30 +239,56 @@
     </footer>
 
     <script>
+        // 1. 初始化繁轉簡
+        let converter;
+        document.addEventListener('DOMContentLoaded', () => {
+            try { if (typeof OpenCC !== 'undefined') converter = OpenCC.Converter({ from: 'tw', to: 'cn' }); } catch(e){}
+        });
+
+        // 2. 彈窗管理
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // 3. 灰機搜尋邏輯
+        function quickSearch(type) {
+            const inputId = type === '物品' ? 'itemInput' : 'questInput';
+            const inputEl = document.getElementById(inputId);
+            const rawText = inputEl.value.trim();
+            if (!rawText) return;
+            const simplified = converter ? converter(rawText) : rawText;
+            window.open(`https://ff14.huijiwiki.com/wiki/${type}:${encodeURIComponent(simplified)}`, '_blank');
+            inputEl.value = ""; 
+        }
+
+        // 4. 通知與提醒邏輯
         function requestNotify() { if (Notification.permission !== "granted") Notification.requestPermission(); }
         function playAlert(title, msg) {
             const audio = document.getElementById('alertSound');
-            audio.currentTime = 0;
-            audio.play().catch(e => console.log("等待授權播放音效"));
+            audio.currentTime = 0; audio.play().catch(e => {});
             if (Notification.permission === "granted") new Notification(title, { body: msg, icon: 'logo.png' });
         }
 
         setInterval(() => {
             if (!document.getElementById('eventSwitch').checked) return;
             const now = new Date();
+            // 偵測偶數整點
             if (now.getHours() % 2 === 0 && now.getMinutes() === 0 && now.getSeconds() === 0) {
                 playAlert("艾歐澤亞活動", "海釣/蒼天街活動開始了！");
             }
         }, 1000);
 
+        // 5. 雇員計時器
         let timer;
         document.getElementById('startBtn').addEventListener('click', () => {
             requestNotify();
             clearInterval(timer);
+            // 嘗試播放靜音音效以解鎖瀏覽器自動播放限制
             const audio = document.getElementById('alertSound');
-            audio.play().then(() => { audio.pause(); audio.currentTime = 0; });
+            audio.play().then(() => { audio.pause(); audio.currentTime = 0; }).catch(()=>{});
+
             let totalSec = parseInt(document.getElementById('timerMin').value) * 60;
             if (isNaN(totalSec) || totalSec <= 0) return;
+
             timer = setInterval(() => {
                 totalSec--;
                 let m = Math.floor(totalSec / 60), s = totalSec % 60;
