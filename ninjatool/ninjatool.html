@@ -116,11 +116,11 @@
         <div class="modal-body text-left max-w-md" onclick="event.stopPropagation()">
             <h3 class="text-center text-yellow-500 font-black text-2xl mb-4 italic">📜 修行指南</h3>
             <div class="text-gray-300 text-sm leading-relaxed space-y-3">
-                <p>● <strong class="text-green-400">自由練習</strong>：無壓力背誦印組，出錯僅會重置當前目標。</p>
-                <p>● <strong class="text-orange-400">挑戰模式</strong>：一命模式。結印重複、忍術錯誤或順序不對將立即結束修行。</p>
-                <p>● <strong class="text-red-500">極限模式</strong>：60秒無GCD極限限時挑戰。包含階級評定。</p>
+                <p>● <strong class="text-green-400">自由練習</strong>：無壓力背誦印組。</p>
+                <p>● <strong class="text-orange-400">挑戰模式</strong>：一命模式。錯誤即結束。</p>
+                <p>● <strong class="text-red-500">極限模式</strong>：60秒無GCD極限挑戰。</p>
                 <hr class="border-gray-700">
-               
+                <p class="text-blue-400">※ 支援鍵盤與滑鼠側鍵設定</p>
             </div>
             <button onclick="closeHelp()" class="w-full py-4 bg-gray-800 rounded-xl mt-6 font-bold">確認</button>
         </div>
@@ -155,33 +155,18 @@
             e.returnValue = ''; 
         });
 
-        function safeExit() {
-            playSound('click');
-            game.active = false;
-            if(timerInterval) clearInterval(timerInterval);
-            document.getElementById('result-modal').style.display = 'none';
-            document.getElementById('game-area').classList.add('hidden');
-            document.getElementById('setup-area').classList.remove('hidden');
-            game.combo = 0;
-            game.seq = [];
-            document.getElementById('combo-display').innerText = "0";
-            document.getElementById('mudra-display-container').innerHTML = '';
-        }
-
         const IMGS = { "天": "ten.png", "地": "chi.png", "人": "jin.png", "發動": "ninjutsu.png", "兔子": "rabbit.png", "風魔手裏劍": "shuriken.png", "火遁之術": "katon.png", "雷遁之術": "raiton.png", "冰遁之術": "hyoton.png", "水遁之術": "suiton.png", "土遁之術": "doton.png", "風遁之術": "huton.png" };
-        
-        // --- [核心修正] 忍術資料庫 ---
         const JUTSU_DATA = [ 
             { name: "風魔手裏劍", answers: [["天"], ["地"], ["人"]] }, 
             { name: "火遁之術", answers: [["地", "天"], ["人", "天"]] }, 
             { name: "雷遁之術", answers: [["天", "地"], ["人", "地"]] }, 
             { name: "冰遁之術", answers: [["天", "人"], ["地", "人"]] }, 
-            { name: "水遁之術", answers: [["天", "地", "人"], ["地", "天", "人"]] }, // 修正：末印為人
+            { name: "水遁之術", answers: [["天", "地", "人"], ["地", "天", "人"]] },
             { name: "土遁之術", answers: [["天", "人", "地"], ["人", "天", "地"]] }, 
-            { name: "風遁之術", answers: [["地", "人", "天"], ["人", "地", "天"]] }  // 修正：末印為天
+            { name: "風遁之術", answers: [["地", "人", "天"], ["人", "地", "天"]] }
         ];
         
-        let config = JSON.parse(localStorage.getItem('nnj_final_v40')) || [ {skill:'', key:'', ctrl: false, shift: false, alt: false}, {skill:'', key:'', ctrl: false, shift: false, alt: false}, {skill:'', key:'', ctrl: false, shift: false, alt: false}, {skill:'', key:'', ctrl: false, shift: false, alt: false} ];
+        let config = JSON.parse(localStorage.getItem('nnj_final_v40')) || [ {skill:'', key:'', ctrl: false, shift: false, alt: false, button: -1}, {skill:'', key:'', ctrl: false, shift: false, alt: false, button: -1}, {skill:'', key:'', ctrl: false, shift: false, alt: false, button: -1}, {skill:'', key:'', ctrl: false, shift: false, alt: false, button: -1} ];
         let isMobileMode = JSON.parse(localStorage.getItem('nnj_mobile_mode')) || false;
         let audioConfig = JSON.parse(localStorage.getItem('nnj_audio_config')) || { bgm: true, sfx: true };
         
@@ -199,21 +184,8 @@
 
         function openAudioSettings() { playSound('click'); document.getElementById('audio-modal').style.display = 'flex'; }
         function closeAudioSettings() { playSound('click'); document.getElementById('audio-modal').style.display = 'none'; }
-
-        function toggleBGM() {
-            audioConfig.bgm = !audioConfig.bgm;
-            updateAudioUI();
-            saveAudioConfig();
-            if (audioConfig.bgm) { bgmPlayer.play().catch(()=>{}); } else { bgmPlayer.pause(); }
-        }
-
-        function toggleSFX() {
-            audioConfig.sfx = !audioConfig.sfx;
-            updateAudioUI();
-            saveAudioConfig();
-            playSound('click');
-        }
-
+        function toggleBGM() { audioConfig.bgm = !audioConfig.bgm; updateAudioUI(); saveAudioConfig(); if (audioConfig.bgm) { bgmPlayer.play().catch(()=>{}); } else { bgmPlayer.pause(); } }
+        function toggleSFX() { audioConfig.sfx = !audioConfig.sfx; updateAudioUI(); saveAudioConfig(); playSound('click'); }
         function updateAudioUI() {
             const bgmBtn = document.getElementById('toggle-bgm');
             const sfxBtn = document.getElementById('toggle-sfx');
@@ -222,7 +194,6 @@
             sfxBtn.innerText = audioConfig.sfx ? 'ON' : 'OFF';
             sfxBtn.className = audioConfig.sfx ? 'px-4 py-2 rounded-lg bg-green-600 text-white text-xs font-bold' : 'px-4 py-2 rounded-lg bg-gray-700 text-gray-400 text-xs font-bold';
         }
-
         function saveAudioConfig() { localStorage.setItem('nnj_audio_config', JSON.stringify(audioConfig)); }
         function toggleMobileMode() { playSound('click'); isMobileMode = !isMobileMode; localStorage.setItem('nnj_mobile_mode', isMobileMode); applyMobileUI(); }
         function applyMobileUI() { document.body.classList.toggle('mobile-mode', isMobileMode); document.getElementById('mobile-text').innerText = isMobileMode ? '手機版：ON' : '手機版：OFF'; refreshUI(); }
@@ -232,9 +203,58 @@
         function closeModal() { playSound('click'); document.getElementById('skill-modal').style.display='none'; }
         function applySkill(s) { playSound('click'); config[currentSlotIdx].skill = s; saveConfig(); refreshUI(); closeModal(); }
 
-        function startKeyCapture(i) { if(isMobileMode) return; playSound('click'); recordingIdx = i; document.getElementById(`key-${i}`).innerText = "請按鍵..."; window.addEventListener('keydown', handleInputCapture, true); }
-        function handleInputCapture(e) { e.preventDefault(); e.stopPropagation(); if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return; config[recordingIdx].key = e.key.toLowerCase(); config[recordingIdx].ctrl = e.ctrlKey; config[recordingIdx].shift = e.shiftKey; config[recordingIdx].alt = e.altKey; saveConfig(); window.removeEventListener('keydown', handleInputCapture, true); refreshUI(); recordingIdx = -1; }
-        function formatKeyDisplay(c) { if (!c.key) return "未設定"; let parts = []; if (c.ctrl) parts.push("Ctrl"); if (c.alt) parts.push("Alt"); if (c.shift) parts.push("Shift"); parts.push(c.key.toUpperCase()); return parts.join("+"); }
+        // --- 滑鼠快捷鍵功能實作 ---
+
+        function startKeyCapture(i) { 
+            if(isMobileMode) return; 
+            playSound('click'); 
+            recordingIdx = i; 
+            document.getElementById(`key-${i}`).innerText = "請按下任意鍵或滑鼠按鍵..."; 
+            window.addEventListener('keydown', handleInputCapture, true);
+            window.addEventListener('mousedown', handleMouseCapture, true);
+            window.addEventListener('contextmenu', preventDefault, true); // 捕獲期間防止右鍵菜單
+        }
+
+        function preventDefault(e) { e.preventDefault(); }
+
+        function handleInputCapture(e) { 
+            e.preventDefault(); e.stopPropagation(); 
+            if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return; 
+            finishCapture(recordingIdx, { key: e.key.toLowerCase(), ctrl: e.ctrlKey, shift: e.shiftKey, alt: e.altKey, button: -1 });
+        }
+
+        function handleMouseCapture(e) {
+            e.preventDefault(); e.stopPropagation();
+            // button: 0=左, 1=中, 2=右, 3=後退(侧4), 4=前進(侧5)
+            finishCapture(recordingIdx, { key: '', ctrl: e.ctrlKey, shift: e.shiftKey, alt: e.altKey, button: e.button });
+        }
+
+        function finishCapture(idx, data) {
+            config[idx] = { ...config[idx], ...data };
+            saveConfig();
+            window.removeEventListener('keydown', handleInputCapture, true);
+            window.removeEventListener('mousedown', handleMouseCapture, true);
+            window.removeEventListener('contextmenu', preventDefault, true);
+            refreshUI();
+            recordingIdx = -1;
+        }
+
+        function formatKeyDisplay(c) { 
+            if (!c.key && (c.button === undefined || c.button === -1)) return "未設定"; 
+            let parts = []; 
+            if (c.ctrl) parts.push("Ctrl"); 
+            if (c.alt) parts.push("Alt"); 
+            if (c.shift) parts.push("Shift"); 
+            
+            if (c.button !== -1) {
+                const mouseMap = { 0: "M1", 1: "M3", 2: "M2", 3: "M4", 4: "M5" };
+                parts.push(mouseMap[c.button] || `MB${c.button}`);
+            } else {
+                parts.push(c.key.toUpperCase());
+            }
+            return parts.join("+"); 
+        }
+
         function saveConfig() { localStorage.setItem('nnj_final_v40', JSON.stringify(config)); }
 
         function refreshUI() {
@@ -242,9 +262,11 @@
                 document.getElementById(`skill-${i}`).innerHTML = c.skill ? `<img src="${IMGS[c.skill]}">` : `<span class="text-gray-600 text-4xl">+</span>`;
                 document.getElementById(`key-${i}`).innerText = formatKeyDisplay(c);
             });
-            const ready = config.every(c => isMobileMode ? c.skill !== '' : (c.skill !== '' && c.key !== ''));
+            const ready = config.every(c => isMobileMode ? c.skill !== '' : (c.skill !== '' && (c.key !== '' || (c.button !== undefined && c.button !== -1))));
             ['btn-free', 'btn-challenge', 'btn-limit'].forEach(id => document.getElementById(id).disabled = !ready);
         }
+
+        // --- 遊戲邏輯 ---
 
         function launchGame(mode) {
             playSound('click'); game.mode = mode; game.active = true; game.combo = 0;
@@ -261,8 +283,41 @@
                 slot.addEventListener('pointerdown', () => { if(isMobileMode) triggerSkill(c); });
                 hotbar.appendChild(slot);
             });
+            
+            // 進入遊戲後全局攔截右鍵與側鍵
+            window.addEventListener('mousedown', handleInGameMouse, true);
+            window.addEventListener('contextmenu', preventDefault, true);
             nextTarget();
         }
+
+        function safeExit() {
+            playSound('click');
+            game.active = false;
+            if(timerInterval) clearInterval(timerInterval);
+            window.removeEventListener('mousedown', handleInGameMouse, true);
+            window.removeEventListener('contextmenu', preventDefault, true);
+            document.getElementById('result-modal').style.display = 'none';
+            document.getElementById('game-area').classList.add('hidden');
+            document.getElementById('setup-area').classList.remove('hidden');
+            game.combo = 0; game.seq = [];
+            document.getElementById('combo-display').innerText = "0";
+            document.getElementById('mudra-display-container').innerHTML = '';
+        }
+
+        function handleInGameMouse(e) {
+            if(!game.active || isMobileMode) return;
+            const action = config.find(c => c.button === e.button && c.ctrl === e.ctrlKey && c.shift === e.shiftKey && c.alt === e.altKey);
+            if(action) {
+                e.preventDefault(); e.stopPropagation();
+                triggerSkill(action);
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if(!game.active || isMobileMode || recordingIdx !== -1) return;
+            const action = config.find(c => c.key === e.key.toLowerCase() && c.ctrl === e.ctrlKey && c.shift === e.shiftKey && c.alt === e.altKey);
+            if(action) { e.preventDefault(); triggerSkill(action); }
+        }, true);
 
         function triggerSkill(action) {
             if(!game.active) return;
@@ -270,12 +325,6 @@
             if(game.mode !== 'limit') runGCD();
             action.skill === '發動' ? doCast() : doMudra(action.skill);
         }
-
-        window.addEventListener('keydown', (e) => {
-            if(isMobileMode || recordingIdx !== -1) return;
-            const action = config.find(c => c.key === e.key.toLowerCase() && c.ctrl === e.ctrlKey && c.shift === e.shiftKey && c.alt === e.altKey);
-            if(action) { e.preventDefault(); triggerSkill(action); }
-        }, true);
 
         function startTimer() { timerInterval = setInterval(() => { timer--; document.getElementById('timer-display').innerText = `TIME: ${timer}`; if(timer <= 0) { clearInterval(timerInterval); showResult(); } }, 1000); }
         
@@ -307,28 +356,22 @@
             document.getElementById('mudra-display-container').appendChild(img);
         }
 
-        // --- [核心修正] 忍術發動邏輯 ---
         function doCast() {
             if(game.seq.length === 0) return;
             const len = game.seq.length, last = game.seq[len-1];
             let res = "兔子";
-
-            if(len === 1) {
-                res = "風魔手裏劍";
-            } else if(len === 2) {
+            if(len === 1) res = "風魔手裏劍";
+            else if(len === 2) {
                 if(last === "天") res = "火遁之術";
                 else if(last === "地") res = "雷遁之術";
                 else if(last === "人") res = "冰遁之術";
             } else if(len === 3) {
-                // 修正：FFXIV 官方規則
                 if(last === "人") res = "水遁之術";
                 else if(last === "地") res = "土遁之術";
                 else if(last === "天") res = "風遁之術";
             }
-
             if(res === game.target.name) { 
-                playSound('success'); 
-                game.combo++; 
+                playSound('success'); game.combo++; 
                 document.getElementById('combo-display').innerText = game.combo; 
                 nextTarget(); 
             } else { 
@@ -337,34 +380,26 @@
             }
         }
 
-        function calculateRank(score) {
-            if (score >= 41) return "忍者階級：影級 (Kage)";
-            if (score >= 26) return "忍者階級：上忍 (Jonin)";
-            if (score >= 11) return "忍者階級：中忍 (Chunin)";
-            return "忍者階級：下忍 (Genin)";
-        }
-
         function showResult() {
             game.active = false; if(timerInterval) clearInterval(timerInterval);
+            window.removeEventListener('mousedown', handleInGameMouse, true);
+            window.removeEventListener('contextmenu', preventDefault, true);
             document.getElementById('result-modal').style.display = 'flex';
             document.getElementById('final-score').innerText = game.combo;
             const rankEl = document.getElementById('final-rank');
             if(game.mode === 'limit') {
-                rankEl.innerText = calculateRank(game.combo);
+                const score = game.combo;
+                let rank = "忍者階級：下忍 (Genin)";
+                if (score >= 41) rank = "忍者階級：影級 (Kage)";
+                else if (score >= 26) rank = "忍者階級：上忍 (Jonin)";
+                else if (score >= 11) rank = "忍者階級：中忍 (Chunin)";
+                rankEl.innerText = rank;
                 rankEl.classList.remove('hidden');
-            } else {
-                rankEl.innerText = "";
-                rankEl.classList.add('hidden');
-            }
+            } else { rankEl.classList.add('hidden'); }
         }
 
-        window.addEventListener('click', () => { 
-            if(bgmPlayer.paused && audioConfig.bgm) bgmPlayer.play().catch(()=>{}); 
-        }, { once: true });
-        
-        applyMobileUI();
-        updateAudioUI();
-        if (!audioConfig.bgm) bgmPlayer.pause();
+        window.addEventListener('click', () => { if(bgmPlayer.paused && audioConfig.bgm) bgmPlayer.play().catch(()=>{}); }, { once: true });
+        applyMobileUI(); updateAudioUI(); if (!audioConfig.bgm) bgmPlayer.pause();
     </script>
 </body>
 </html>
