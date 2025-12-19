@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mudra Master - 專業忍者訓練</title>
+    
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="favicon.png" type="image/png">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background: #0d0f14; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; overflow: hidden; touch-action: manipulation; }
@@ -11,15 +15,11 @@
         .slot-container { @apply flex flex-col items-center w-24; }
         .skill-slot { @apply w-20 h-20 bg-gray-800 border-2 border-gray-700 rounded-xl flex items-center justify-center cursor-pointer transition-all hover:border-yellow-500 hover:bg-gray-700 overflow-hidden; }
         .skill-slot img { @apply w-full h-full p-2 object-contain; }
-        .key-text { @apply mt-3 text-lg font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors cursor-pointer bg-gray-800/50 px-2 rounded border border-transparent hover:border-blue-500; }
+        .key-text { @apply mt-3 text-sm font-black text-blue-400 uppercase tracking-widest hover:text-white transition-colors cursor-pointer bg-gray-800/50 px-2 py-1 rounded border border-transparent hover:border-blue-500 min-w-[80px] text-center; }
 
         #mudra-display-container { 
-            @apply w-full max-w-sm h-24 bg-black/60 border-2 border-gray-700/50 rounded-2xl mx-auto;
-            display: flex !important; 
-            flex-direction: row !important; 
-            align-items: center !important; 
-            justify-content: center !important; 
-            gap: 1.5rem !important; 
+            @apply w-full max-sm:max-w-[280px] max-w-sm h-24 bg-black/60 border-2 border-gray-700/50 rounded-2xl mx-auto;
+            display: flex !important; flex-direction: row !important; align-items: center !important; justify-content: center !important; gap: 1.5rem !important; 
         }
         .mudra-icon-static { width: 3.5rem; height: 3.5rem; object-fit: contain; flex-shrink: 0; }
 
@@ -29,18 +29,18 @@
         .hotbar-icon-wrap { @apply border-2 border-gray-700 rounded-lg bg-gray-800/80; }
         .rect-btn { @apply flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold border-2 transition-all active:scale-95 cursor-pointer; min-width: 140px; }
         .btn-help { @apply border-blue-500/40 text-blue-400 bg-blue-500/10 hover:bg-blue-500/20; }
-        .btn-bgm { @apply border-yellow-500/40 text-yellow-500 bg-yellow-500/10 hover:bg-yellow-500/20; }
+        .btn-audio { @apply border-yellow-500/40 text-yellow-500 bg-yellow-500/10 hover:bg-yellow-500/20; }
         .btn-mobile { @apply border-purple-500/40 text-purple-400 bg-purple-500/10 hover:bg-purple-500/20; }
         .btn-action { @apply py-4 px-6 rounded-xl font-black border-2 transition-all active:scale-95 disabled:opacity-20; }
         
-        /* 手機模式切換樣式 */
         body.mobile-mode .key-text { visibility: hidden; }
         body.mobile-mode .btn-mobile { @apply border-purple-500 text-white bg-purple-600/40; }
         body.mobile-mode .game-hotbar-item .key-hint { display: none; }
-        body.mobile-mode .hotbar-icon-wrap { width: 4.5rem; height: 4.5rem; }
 
         .hidden { display: none !important; }
         .limit-break-active { box-shadow: 0 0 20px rgba(239, 68, 68, 0.5); border-color: #ef4444 !important; }
+        
+        .audio-toggle-row { @apply flex items-center justify-between bg-gray-800/50 p-4 rounded-xl border border-gray-700; }
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
@@ -52,21 +52,23 @@
     <audio id="sfx-fail-challenge" src="fail_challenge.mp3" preload="auto"></audio>
     <audio id="bgm-player" src="bgm.mp3" loop preload="auto"></audio>
 
-    <section id="setup-area" class="w-full max-w-3xl text-center space-y-12">
-        <div>
-            <h1 class="text-6xl md:text-7xl font-black text-yellow-500 italic tracking-tighter mb-4 uppercase">Mudra Master</h1>
-            <div class="flex flex-wrap items-center justify-center gap-4">
+    <section id="setup-area" class="w-full max-w-3xl text-center space-y-10">
+        <div class="flex flex-col items-center justify-center gap-4 mb-2">
+            <img src="logo.png" alt="Mudra Master Logo" class="w-20 h-20 md:w-28 md:h-28 object-contain">
+            <h1 class="text-6xl md:text-7xl font-black text-yellow-500 italic tracking-tighter uppercase">Mudra Master</h1>
+            
+            <div class="flex flex-wrap items-center justify-center gap-4 mt-4">
                 <div class="rect-btn btn-help" onclick="openHelp()"><span>📜</span> 指南</div>
                 <div id="mobile-toggle" class="rect-btn btn-mobile" onclick="toggleMobileMode()"><span id="mobile-icon">📱</span> <span id="mobile-text">手機版：OFF</span></div>
-                <div id="music-toggle" class="rect-btn btn-bgm" onclick="toggleMute()"><span id="bgm-icon">🎵</span> <span id="bgm-text">音樂：ON</span></div>
+                <div id="audio-settings-btn" class="rect-btn btn-audio" onclick="openAudioSettings()"><span>🎵</span> <span id="audio-btn-text">音訊設定</span></div>
             </div>
         </div>
 
         <div class="flex justify-center gap-4 md:gap-6">
-            <div class="slot-container"><div id="skill-0" onclick="openModal(0)" class="skill-slot"><span class="text-gray-600 text-4xl">+</span></div><div id="key-0" onclick="startKeyCapture(0)" class="key-text">Q</div></div>
-            <div class="slot-container"><div id="skill-1" onclick="openModal(1)" class="skill-slot"><span class="text-gray-600 text-4xl">+</span></div><div id="key-1" onclick="startKeyCapture(1)" class="key-text">W</div></div>
-            <div class="slot-container"><div id="skill-2" onclick="openModal(2)" class="skill-slot"><span class="text-gray-600 text-4xl">+</span></div><div id="key-2" onclick="startKeyCapture(2)" class="key-text">E</div></div>
-            <div class="slot-container"><div id="skill-3" onclick="openModal(3)" class="skill-slot"><span class="text-gray-600 text-4xl">+</span></div><div id="key-3" onclick="startKeyCapture(3)" class="key-text">R</div></div>
+            <div class="slot-container"><div id="skill-0" onclick="openModal(0)" class="skill-slot"></div><div id="key-0" onclick="startKeyCapture(0)" class="key-text">未設定</div></div>
+            <div class="slot-container"><div id="skill-1" onclick="openModal(1)" class="skill-slot"></div><div id="key-1" onclick="startKeyCapture(1)" class="key-text">未設定</div></div>
+            <div class="slot-container"><div id="skill-2" onclick="openModal(2)" class="skill-slot"></div><div id="key-2" onclick="startKeyCapture(2)" class="key-text">未設定</div></div>
+            <div class="slot-container"><div id="skill-3" onclick="openModal(3)" class="skill-slot"></div><div id="key-3" onclick="startKeyCapture(3)" class="key-text">未設定</div></div>
         </div>
 
         <div class="flex flex-col md:flex-row gap-4 max-w-2xl mx-auto">
@@ -79,28 +81,46 @@
     <main id="game-area" class="hidden w-full max-w-2xl">
         <div id="game-card" class="glass-card p-6 md:p-10 space-y-8">
             <div class="flex justify-between items-center">
-                <button onclick="location.reload();" class="px-4 py-2 bg-gray-800 border border-gray-700 rounded text-xs font-bold hover:text-red-400">退出</button>
+                <button onclick="safeExit()" class="px-4 py-2 bg-gray-800 border border-gray-700 rounded text-xs font-bold hover:text-red-400">退出</button>
                 <div id="timer-display" class="hidden text-3xl font-black text-red-500 animate-pulse italic">TIME: 60</div>
                 <div class="text-3xl font-black text-yellow-500 italic uppercase">Combo <span id="combo-display" class="text-white">0</span></div>
             </div>
             <div class="text-center space-y-4">
                 <img id="target-icon" src="" class="w-24 h-24 mx-auto rounded-2xl border-2 border-yellow-500/20 shadow-2xl p-1">
                 <h2 id="target-name" class="text-4xl font-black italic text-white uppercase tracking-tighter">---</h2>
-                <div id="hint-box" class="flex justify-center gap-2 h-6"></div>
+                <div id="hint-box" class="flex flex-wrap justify-center gap-2 min-h-[1.5rem]"></div>
                 <div id="mudra-display-container"></div> 
             </div>
             <div id="game-hotbar-display" class="flex justify-center gap-4 md:gap-8 pt-6 border-t border-gray-800/50"></div>
         </div>
     </main>
 
+    <div id="audio-modal" class="modal-overlay" onclick="closeAudioSettings()">
+        <div class="modal-body max-w-xs" onclick="event.stopPropagation()">
+            <h3 class="text-xl font-black text-yellow-500 mb-6 uppercase italic">音訊設定</h3>
+            <div class="space-y-4">
+                <div class="audio-toggle-row">
+                    <span class="font-bold text-gray-300">背景音樂 (BGM)</span>
+                    <button id="toggle-bgm" onclick="toggleBGM()" class="px-4 py-2 rounded-lg bg-green-600 text-white text-xs font-bold">ON</button>
+                </div>
+                <div class="audio-toggle-row">
+                    <span class="font-bold text-gray-300">遊戲音效 (SFX)</span>
+                    <button id="toggle-sfx" onclick="toggleSFX()" class="px-4 py-2 rounded-lg bg-green-600 text-white text-xs font-bold">ON</button>
+                </div>
+            </div>
+            <button onclick="closeAudioSettings()" class="w-full py-3 bg-gray-800 rounded-xl mt-6 font-bold">關閉</button>
+        </div>
+    </div>
+
     <div id="help-modal" class="modal-overlay" onclick="closeHelp()">
         <div class="modal-body text-left max-w-md" onclick="event.stopPropagation()">
             <h3 class="text-center text-yellow-500 font-black text-2xl mb-4 italic">📜 修行指南</h3>
             <div class="text-gray-300 text-sm leading-relaxed space-y-3">
-                <p>● <strong class="text-purple-400">手機模式</strong>：開啟後直接點擊下方技能圖標即可結印，無需設定按鍵。</p>
-                <p>● <strong class="text-green-400">設定</strong>：點擊下方文字可綁定鍵盤或滑鼠鍵。</p>
-                <p>● <strong class="text-orange-400">挑戰模式</strong>：0.5s GCD，失誤即終止。</p>
-                <p>● <strong class="text-red-500">極限模式</strong>：無視冷卻，60秒地獄。</p>
+                <p>● <strong class="text-green-400">自由練習</strong>：無壓力背誦印組，出錯僅會重置當前目標。</p>
+                <p>● <strong class="text-orange-400">挑戰模式</strong>：一命模式。結印重複、忍術錯誤或順序不對將立即結束修行。</p>
+                <p>● <strong class="text-red-500">極限模式</strong>：60秒無GCD極限限時挑戰。包含階級評定。</p>
+                <hr class="border-gray-700">
+               
             </div>
             <button onclick="closeHelp()" class="w-full py-4 bg-gray-800 rounded-xl mt-6 font-bold">確認</button>
         </div>
@@ -108,7 +128,7 @@
 
     <div id="skill-modal" class="modal-overlay" onclick="closeModal()">
         <div class="modal-body" onclick="event.stopPropagation()">
-            <h3 class="text-xl font-black text-yellow-500 mb-6 uppercase italic">選擇技能</h3>
+            <h3 class="text-xl font-black text-yellow-500 mb-6 uppercase italic">配置印記</h3>
             <div class="grid grid-cols-4 gap-4">
                 <button onclick="applySkill('天')" class="hover:scale-110 transition-transform"><img src="ten.png" class="w-20"></button>
                 <button onclick="applySkill('地')" class="hover:scale-110 transition-transform"><img src="chi.png" class="w-20"></button>
@@ -120,133 +140,125 @@
 
     <div id="result-modal" class="modal-overlay">
         <div class="modal-body">
-            <h2 class="text-5xl font-black text-red-500 italic mb-2">修行結果</h2>
-            <p id="final-reason" class="text-gray-500 uppercase font-bold mb-6"></p>
-            <div id="detailed-stats" class="text-blue-400 font-bold text-sm mb-4"></div>
-            <div class="py-6 border-y border-gray-800">
-                <p id="final-score" class="text-8xl font-black text-white">0</p>
-                <p id="rank-text" class="text-2xl font-bold text-yellow-500 mt-4 italic"></p>
-            </div>
-            <button onclick="location.reload();" class="w-full py-4 bg-red-600 text-white font-black rounded-xl mt-8">重新開始</button>
+            <h2 class="text-5xl font-black text-red-500 italic mb-2">修行結束</h2>
+            <div class="py-4"><p id="final-rank" class="text-2xl font-black text-yellow-500 italic tracking-widest uppercase"></p></div>
+            <div class="py-6 border-y border-gray-800"><p id="final-score" class="text-8xl font-black text-white">0</p></div>
+            <button onclick="safeExit()" class="w-full py-4 bg-red-600 text-white font-black rounded-xl mt-8">重返修行場</button>
         </div>
     </div>
 
     <script>
+        let allowExit = false;
+        window.addEventListener('beforeunload', (e) => {
+            if (allowExit) return;
+            e.preventDefault();
+            e.returnValue = ''; 
+        });
+
+        function safeExit() {
+            playSound('click');
+            game.active = false;
+            if(timerInterval) clearInterval(timerInterval);
+            document.getElementById('result-modal').style.display = 'none';
+            document.getElementById('game-area').classList.add('hidden');
+            document.getElementById('setup-area').classList.remove('hidden');
+            game.combo = 0;
+            game.seq = [];
+            document.getElementById('combo-display').innerText = "0";
+            document.getElementById('mudra-display-container').innerHTML = '';
+        }
+
         const IMGS = { "天": "ten.png", "地": "chi.png", "人": "jin.png", "發動": "ninjutsu.png", "兔子": "rabbit.png", "風魔手裏劍": "shuriken.png", "火遁之術": "katon.png", "雷遁之術": "raiton.png", "冰遁之術": "hyoton.png", "水遁之術": "suiton.png", "土遁之術": "doton.png", "風遁之術": "huton.png" };
-        const JUTSU_DATA = [ { name: "風魔手裏劍", answers: [["天"], ["地"], ["人"]] }, { name: "火遁之術", answers: [["地", "天"], ["人", "天"]] }, { name: "雷遁之術", answers: [["天", "地"], ["人", "地"]] }, { name: "冰遁之術", answers: [["天", "人"], ["地", "人"]] }, { name: "水遁之術", answers: [["地", "人", "天"], ["人", "地", "天"]] }, { name: "土遁之術", answers: [["天", "人", "地"], ["人", "激", "地"]] }, { name: "風遁之術", answers: [["天", "地", "人"], ["地", "天", "人"]] } ];
         
-        let config = JSON.parse(localStorage.getItem('nnj_final_v31')) || [{skill:'',key:'q', type:'key'},{skill:'',key:'w', type:'key'},{skill:'',key:'e', type:'key'},{skill:'',key:'r', type:'key'}];
+        // --- [核心修正] 忍術資料庫 ---
+        const JUTSU_DATA = [ 
+            { name: "風魔手裏劍", answers: [["天"], ["地"], ["人"]] }, 
+            { name: "火遁之術", answers: [["地", "天"], ["人", "天"]] }, 
+            { name: "雷遁之術", answers: [["天", "地"], ["人", "地"]] }, 
+            { name: "冰遁之術", answers: [["天", "人"], ["地", "人"]] }, 
+            { name: "水遁之術", answers: [["天", "地", "人"], ["地", "天", "人"]] }, // 修正：末印為人
+            { name: "土遁之術", answers: [["天", "人", "地"], ["人", "天", "地"]] }, 
+            { name: "風遁之術", answers: [["地", "人", "天"], ["人", "地", "天"]] }  // 修正：末印為天
+        ];
+        
+        let config = JSON.parse(localStorage.getItem('nnj_final_v40')) || [ {skill:'', key:'', ctrl: false, shift: false, alt: false}, {skill:'', key:'', ctrl: false, shift: false, alt: false}, {skill:'', key:'', ctrl: false, shift: false, alt: false}, {skill:'', key:'', ctrl: false, shift: false, alt: false} ];
         let isMobileMode = JSON.parse(localStorage.getItem('nnj_mobile_mode')) || false;
-        let currentSlotIdx = -1, recordingIdx = -1, isMuted = false, timer = 60, timerInterval;
-        let game = { active: false, mode: '', combo: 0, seq: [], target: null, isGCD: false, startTime: 0, speeds: [], totalActions: 0 };
+        let audioConfig = JSON.parse(localStorage.getItem('nnj_audio_config')) || { bgm: true, sfx: true };
+        
+        let currentSlotIdx = -1, recordingIdx = -1, timer = 60, timerInterval;
+        let game = { active: false, mode: '', combo: 0, seq: [], target: null, isGCD: false };
 
         const bgmPlayer = document.getElementById('bgm-player');
         bgmPlayer.volume = 0.4;
 
-        function playSound(id) {
-            if (isMuted) return;
-            const s = document.getElementById(`sfx-${id}`);
-            if(s) { s.currentTime = 0; s.play().catch(()=>{}); }
+        function playSound(id) { 
+            if (!audioConfig.sfx) return; 
+            const s = document.getElementById(`sfx-${id}`); 
+            if(s) { s.currentTime = 0; s.play().catch(()=>{}); } 
         }
 
-        function toggleMobileMode() {
+        function openAudioSettings() { playSound('click'); document.getElementById('audio-modal').style.display = 'flex'; }
+        function closeAudioSettings() { playSound('click'); document.getElementById('audio-modal').style.display = 'none'; }
+
+        function toggleBGM() {
+            audioConfig.bgm = !audioConfig.bgm;
+            updateAudioUI();
+            saveAudioConfig();
+            if (audioConfig.bgm) { bgmPlayer.play().catch(()=>{}); } else { bgmPlayer.pause(); }
+        }
+
+        function toggleSFX() {
+            audioConfig.sfx = !audioConfig.sfx;
+            updateAudioUI();
+            saveAudioConfig();
             playSound('click');
-            isMobileMode = !isMobileMode;
-            localStorage.setItem('nnj_mobile_mode', isMobileMode);
-            applyMobileUI();
         }
 
-        function applyMobileUI() {
-            document.body.classList.toggle('mobile-mode', isMobileMode);
-            document.getElementById('mobile-text').innerText = isMobileMode ? '手機版：ON' : '手機版：OFF';
-            refreshUI();
+        function updateAudioUI() {
+            const bgmBtn = document.getElementById('toggle-bgm');
+            const sfxBtn = document.getElementById('toggle-sfx');
+            bgmBtn.innerText = audioConfig.bgm ? 'ON' : 'OFF';
+            bgmBtn.className = audioConfig.bgm ? 'px-4 py-2 rounded-lg bg-green-600 text-white text-xs font-bold' : 'px-4 py-2 rounded-lg bg-gray-700 text-gray-400 text-xs font-bold';
+            sfxBtn.innerText = audioConfig.sfx ? 'ON' : 'OFF';
+            sfxBtn.className = audioConfig.sfx ? 'px-4 py-2 rounded-lg bg-green-600 text-white text-xs font-bold' : 'px-4 py-2 rounded-lg bg-gray-700 text-gray-400 text-xs font-bold';
         }
 
-        function toggleMute() { playSound('click'); isMuted = !isMuted; document.getElementById('bgm-icon').innerText = isMuted ? '🔇' : '🎵'; document.getElementById('bgm-text').innerText = isMuted ? '音樂：OFF' : '音樂：ON'; isMuted ? bgmPlayer.pause() : bgmPlayer.play().catch(()=>{}); }
+        function saveAudioConfig() { localStorage.setItem('nnj_audio_config', JSON.stringify(audioConfig)); }
+        function toggleMobileMode() { playSound('click'); isMobileMode = !isMobileMode; localStorage.setItem('nnj_mobile_mode', isMobileMode); applyMobileUI(); }
+        function applyMobileUI() { document.body.classList.toggle('mobile-mode', isMobileMode); document.getElementById('mobile-text').innerText = isMobileMode ? '手機版：ON' : '手機版：OFF'; refreshUI(); }
         function openHelp() { playSound('click'); document.getElementById('help-modal').style.display='flex'; }
         function closeHelp() { playSound('click'); document.getElementById('help-modal').style.display='none'; }
         function openModal(i) { playSound('click'); currentSlotIdx = i; document.getElementById('skill-modal').style.display='flex'; }
         function closeModal() { playSound('click'); document.getElementById('skill-modal').style.display='none'; }
-        function applySkill(s) { playSound('click'); config[currentSlotIdx].skill = s; localStorage.setItem('nnj_final_v31', JSON.stringify(config)); refreshUI(); closeModal(); }
+        function applySkill(s) { playSound('click'); config[currentSlotIdx].skill = s; saveConfig(); refreshUI(); closeModal(); }
 
-        function startKeyCapture(i) { 
-            if(isMobileMode) return;
-            playSound('click');
-            recordingIdx = i; 
-            document.getElementById(`key-${i}`).innerText = "請輸入..."; 
-            window.addEventListener('keydown', handleInputCapture);
-            window.addEventListener('mousedown', handleInputCapture);
-            window.addEventListener('contextmenu', preventDefault);
-        }
-
-        function preventDefault(e) { e.preventDefault(); }
-
-        function handleInputCapture(e) {
-            e.preventDefault();
-            let keyVal = "";
-            let inputType = "";
-            if (e.type === 'keydown') {
-                keyVal = e.key.toLowerCase();
-                inputType = 'key';
-            } else if (e.type === 'mousedown') {
-                keyVal = `mouse_${e.button}`;
-                inputType = 'mouse';
-                if(e.button === 0) return; 
-            }
-            config[recordingIdx].key = keyVal;
-            config[recordingIdx].type = inputType;
-            localStorage.setItem('nnj_final_v31', JSON.stringify(config));
-            window.removeEventListener('keydown', handleInputCapture);
-            window.removeEventListener('mousedown', handleInputCapture);
-            setTimeout(() => window.removeEventListener('contextmenu', preventDefault), 100);
-            refreshUI();
-            recordingIdx = -1;
-        }
-
-        function formatKeyDisplay(val) {
-            if (val.startsWith('mouse_')) {
-                const btn = val.split('_')[1];
-                if (btn === '2') return '右鍵';
-                if (btn === '3') return '側(後)';
-                if (btn === '4') return '側(前)';
-                return `M-${btn}`;
-            }
-            return val.toUpperCase();
-        }
+        function startKeyCapture(i) { if(isMobileMode) return; playSound('click'); recordingIdx = i; document.getElementById(`key-${i}`).innerText = "請按鍵..."; window.addEventListener('keydown', handleInputCapture, true); }
+        function handleInputCapture(e) { e.preventDefault(); e.stopPropagation(); if (['Control', 'Shift', 'Alt', 'Meta'].includes(e.key)) return; config[recordingIdx].key = e.key.toLowerCase(); config[recordingIdx].ctrl = e.ctrlKey; config[recordingIdx].shift = e.shiftKey; config[recordingIdx].alt = e.altKey; saveConfig(); window.removeEventListener('keydown', handleInputCapture, true); refreshUI(); recordingIdx = -1; }
+        function formatKeyDisplay(c) { if (!c.key) return "未設定"; let parts = []; if (c.ctrl) parts.push("Ctrl"); if (c.alt) parts.push("Alt"); if (c.shift) parts.push("Shift"); parts.push(c.key.toUpperCase()); return parts.join("+"); }
+        function saveConfig() { localStorage.setItem('nnj_final_v40', JSON.stringify(config)); }
 
         function refreshUI() {
             config.forEach((c, i) => {
                 document.getElementById(`skill-${i}`).innerHTML = c.skill ? `<img src="${IMGS[c.skill]}">` : `<span class="text-gray-600 text-4xl">+</span>`;
-                document.getElementById(`key-${i}`).innerText = formatKeyDisplay(c.key);
+                document.getElementById(`key-${i}`).innerText = formatKeyDisplay(c);
             });
-            // 手機模式下只要設定了技能圖標就算 Ready
             const ready = config.every(c => isMobileMode ? c.skill !== '' : (c.skill !== '' && c.key !== ''));
             ['btn-free', 'btn-challenge', 'btn-limit'].forEach(id => document.getElementById(id).disabled = !ready);
         }
 
         function launchGame(mode) {
-            playSound('click');
-            game.mode = mode; game.active = true; game.combo = 0; game.speeds = []; game.totalActions = 0;
+            playSound('click'); game.mode = mode; game.active = true; game.combo = 0;
+            document.getElementById('combo-display').innerText = 0;
             document.getElementById('setup-area').classList.add('hidden');
             document.getElementById('game-area').classList.remove('hidden');
-            if(mode === 'limit') {
-                timer = 60;
-                document.getElementById('timer-display').classList.remove('hidden');
-                document.getElementById('game-card').classList.add('limit-break-active');
-                startTimer();
-            }
-            const hotbar = document.getElementById('game-hotbar-display'); 
-            hotbar.innerHTML = '';
-            config.forEach((c, i) => { 
-                const slot = document.createElement('div');
-                slot.id = `game-slot-${i}`;
-                slot.className = "game-hotbar-item flex flex-col items-center cursor-pointer";
-                slot.innerHTML = `<div class="hotbar-icon-wrap w-16 h-16 p-2"><img src="${IMGS[c.skill]}" class="w-full h-full object-contain"></div><div class="key-hint mt-2 text-xs font-black text-blue-400">${formatKeyDisplay(c.key)}</div>`;
-                
-                // 增加手機模式點擊偵聽
-                slot.addEventListener('pointerdown', (e) => {
-                    if(isMobileMode) triggerSkill(c);
-                });
+            if(mode === 'limit') { timer = 60; document.getElementById('timer-display').innerText = `TIME: 60`; document.getElementById('timer-display').classList.remove('hidden'); document.getElementById('game-card').classList.add('limit-break-active'); startTimer(); }
+            else { document.getElementById('timer-display').classList.add('hidden'); document.getElementById('game-card').classList.remove('limit-break-active'); }
+            
+            const hotbar = document.getElementById('game-hotbar-display'); hotbar.innerHTML = '';
+            config.forEach((c) => { 
+                const slot = document.createElement('div'); slot.className = "game-hotbar-item flex flex-col items-center cursor-pointer";
+                slot.innerHTML = `<div class="hotbar-icon-wrap w-16 h-16 p-2"><img src="${IMGS[c.skill]}" class="w-full h-full object-contain"></div><div class="key-hint mt-2 text-xs font-black text-blue-400 text-center">${formatKeyDisplay(c)}</div>`;
+                slot.addEventListener('pointerdown', () => { if(isMobileMode) triggerSkill(c); });
                 hotbar.appendChild(slot);
             });
             nextTarget();
@@ -255,34 +267,20 @@
         function triggerSkill(action) {
             if(!game.active) return;
             if(game.mode !== 'limit' && game.isGCD) return;
-            game.totalActions++;
             if(game.mode !== 'limit') runGCD();
             action.skill === '發動' ? doCast() : doMudra(action.skill);
         }
 
         window.addEventListener('keydown', (e) => {
-            if(isMobileMode) return;
-            const action = config.find(c => c.key === e.key.toLowerCase());
-            if(action) triggerSkill(action);
-        });
+            if(isMobileMode || recordingIdx !== -1) return;
+            const action = config.find(c => c.key === e.key.toLowerCase() && c.ctrl === e.ctrlKey && c.shift === e.shiftKey && c.alt === e.altKey);
+            if(action) { e.preventDefault(); triggerSkill(action); }
+        }, true);
 
-        window.addEventListener('mousedown', (e) => {
-            if(isMobileMode || e.button === 0) return;
-            const action = config.find(c => c.key === `mouse_${e.button}`);
-            if(action) triggerSkill(action);
-        });
-
-        function startTimer() {
-            timerInterval = setInterval(() => {
-                timer--;
-                document.getElementById('timer-display').innerText = `TIME: ${timer}`;
-                if(timer <= 0) { clearInterval(timerInterval); showResult("時間到！修行結束"); }
-            }, 1000);
-        }
-
+        function startTimer() { timerInterval = setInterval(() => { timer--; document.getElementById('timer-display').innerText = `TIME: ${timer}`; if(timer <= 0) { clearInterval(timerInterval); showResult(); } }, 1000); }
+        
         function nextTarget() {
-            game.seq = [];
-            game.target = JUTSU_DATA[Math.floor(Math.random() * JUTSU_DATA.length)];
+            game.seq = []; game.target = JUTSU_DATA[Math.floor(Math.random() * JUTSU_DATA.length)];
             document.getElementById('target-name').innerText = game.target.name;
             document.getElementById('target-icon').src = IMGS[game.target.name];
             document.getElementById('mudra-display-container').innerHTML = '';
@@ -294,7 +292,6 @@
                     hb.innerHTML += g + `</div>`;
                 });
             }
-            game.startTime = performance.now();
         }
 
         function runGCD() {
@@ -304,52 +301,70 @@
         }
 
         function doMudra(m) {
-            if(game.seq.includes(m) || game.seq.length >= 3) {
-                if(game.mode === 'limit' || game.mode === 'challenge') { playSound('fail-challenge'); showResult("結印重複！"); }
-                else { playSound('fail-free'); nextTarget(); }
-                return;
-            }
+            if(game.seq.includes(m) || game.seq.length >= 3) { if(game.mode !== 'free') { playSound('fail-challenge'); showResult(); } else { playSound('fail-free'); nextTarget(); } return; }
             playSound('mudra'); game.seq.push(m);
-            const img = document.createElement('img'); 
-            img.src = IMGS[m]; 
-            img.className = 'mudra-icon-static animate-in zoom-in duration-150';
+            const img = document.createElement('img'); img.src = IMGS[m]; img.className = 'mudra-icon-static animate-in zoom-in duration-150';
             document.getElementById('mudra-display-container').appendChild(img);
         }
 
+        // --- [核心修正] 忍術發動邏輯 ---
         function doCast() {
             if(game.seq.length === 0) return;
             const len = game.seq.length, last = game.seq[len-1];
             let res = "兔子";
-            if(len === 1) res = "風魔手裏劍";
-            else if(len === 2) { if(last === "天") res = "火遁之術"; if(last === "地") res = "雷遁之術"; if(last === "人") res = "冰遁之術"; }
-            else if(len === 3) { if(last === "天") res = "水遁之術"; if(last === "地") res = "土遁之術"; if(last === "人") res = "風遁之術"; }
-            
-            if(res === game.target.name) {
-                game.speeds.push((performance.now() - game.startTime) / 1000);
-                playSound('success'); game.combo++;
-                document.getElementById('combo-display').innerText = game.combo;
-                nextTarget();
-            } else {
-                if(game.mode === 'challenge' || game.mode === 'limit') { playSound('fail-challenge'); showResult(`忍術錯誤！(${res})`); }
-                else { playSound('fail-free'); nextTarget(); }
+
+            if(len === 1) {
+                res = "風魔手裏劍";
+            } else if(len === 2) {
+                if(last === "天") res = "火遁之術";
+                else if(last === "地") res = "雷遁之術";
+                else if(last === "人") res = "冰遁之術";
+            } else if(len === 3) {
+                // 修正：FFXIV 官方規則
+                if(last === "人") res = "水遁之術";
+                else if(last === "地") res = "土遁之術";
+                else if(last === "天") res = "風遁之術";
+            }
+
+            if(res === game.target.name) { 
+                playSound('success'); 
+                game.combo++; 
+                document.getElementById('combo-display').innerText = game.combo; 
+                nextTarget(); 
+            } else { 
+                if(game.mode !== 'free') { playSound('fail-challenge'); showResult(); } 
+                else { playSound('fail-free'); nextTarget(); } 
             }
         }
 
-        function showResult(reason) {
-            game.active = false;
-            if(timerInterval) clearInterval(timerInterval);
-            document.getElementById('result-modal').style.display = 'flex';
-            document.getElementById('final-score').innerText = game.combo;
-            document.getElementById('final-reason').innerText = reason;
-            let rank = "下忍";
-            if(game.combo >= 45) rank = "影 (Kage)";
-            else if(game.combo >= 25) rank = "上忍 (Jonin)";
-            else if(game.combo >= 10) rank = "中忍 (Chunin)";
-            document.getElementById('rank-text').innerText = `等級：${rank}`;
+        function calculateRank(score) {
+            if (score >= 41) return "忍者階級：影級 (Kage)";
+            if (score >= 26) return "忍者階級：上忍 (Jonin)";
+            if (score >= 11) return "忍者階級：中忍 (Chunin)";
+            return "忍者階級：下忍 (Genin)";
         }
 
-        window.addEventListener('click', () => { if(bgmPlayer.paused && !isMuted) bgmPlayer.play().catch(()=>{}); }, { once: true });
+        function showResult() {
+            game.active = false; if(timerInterval) clearInterval(timerInterval);
+            document.getElementById('result-modal').style.display = 'flex';
+            document.getElementById('final-score').innerText = game.combo;
+            const rankEl = document.getElementById('final-rank');
+            if(game.mode === 'limit') {
+                rankEl.innerText = calculateRank(game.combo);
+                rankEl.classList.remove('hidden');
+            } else {
+                rankEl.innerText = "";
+                rankEl.classList.add('hidden');
+            }
+        }
+
+        window.addEventListener('click', () => { 
+            if(bgmPlayer.paused && audioConfig.bgm) bgmPlayer.play().catch(()=>{}); 
+        }, { once: true });
+        
         applyMobileUI();
+        updateAudioUI();
+        if (!audioConfig.bgm) bgmPlayer.pause();
     </script>
 </body>
 </html>
