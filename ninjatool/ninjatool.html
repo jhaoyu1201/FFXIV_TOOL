@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FFXIV 忍者修行場 - 統一音效版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background: #0d0f14; color: #e2e8f0; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        .glass-card { @apply bg-gray-900/90 border border-gray-700/50 rounded-2xl shadow-2xl backdrop-blur-md; }
+        
+        .slot-container { @apply flex flex-col items-center w-24; }
+        .skill-slot { @apply w-20 h-20 bg-gray-800 border-2 border-gray-700 rounded-xl flex items-center justify-center cursor-pointer transition-all hover:border-yellow-500 hover:bg-gray-700 overflow-hidden; }
+        .skill-slot img { @apply w-full h-full p-2 object-contain; }
+        .key-text { @apply mt-3 text-xl font-black text-blue-400 uppercase tracking-widest; }
+
+        #mudra-display-container { 
+            @apply w-full max-w-sm h-24 bg-black/60 border-2 border-gray-700/50 rounded-2xl mx-auto;
+            display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important;
+            align-items: center !important; justify-content: center !important; gap: 1rem;
+        }
+        .mudra-icon-static { width: 3.5rem; height: 3.5rem; object-fit: contain; flex-shrink: 0; }
+
+        #skill-modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px); z-index: 999;
+            align-items: center; justify-content: center;
+        }
+        .modal-body { @apply bg-gray-900 border-2 border-yellow-600/50 p-10 rounded-3xl text-center space-y-8 shadow-2xl; }
+        .selection-grid { @apply grid grid-cols-4 gap-6; }
+        .select-item-btn { @apply w-24 h-24 p-3 bg-gray-800 border-2 border-gray-700 rounded-2xl hover:border-yellow-500 hover:bg-gray-700 transition-all transform hover:scale-110; }
+
+        .game-hotbar-item.gcd-active .hotbar-icon-wrap { filter: grayscale(100%) brightness(20%); transition: filter 0.1s ease; }
+        .hotbar-icon-wrap { @apply border-2 border-gray-700 rounded-lg bg-gray-800/80; }
+
+        .btn-action { @apply py-4 px-10 rounded-xl font-black border-2 transition-all active:scale-95 disabled:opacity-20; }
+        .hidden { display: none !important; }
+
+        #music-toggle { @apply fixed top-4 right-4 z-[1001] w-10 h-10 flex items-center justify-center bg-gray-800 rounded-full border border-gray-600 cursor-pointer text-xs opacity-50 hover:opacity-100; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+
+    <audio id="sfx-click" src="click.mp3" preload="auto"></audio>
+    <audio id="sfx-mudra" src="mudra.mp3" preload="auto"></audio>
+    <audio id="sfx-success" src="success.mp3" preload="auto"></audio>
+    <audio id="sfx-fail-free" src="fail_free.mp3" preload="auto"></audio>
+    <audio id="sfx-fail-challenge" src="fail_challenge.mp3" preload="auto"></audio>
+
+    <audio id="bgm-player" src="bgm.mp3" loop preload="auto"></audio>
+
+    <div id="music-toggle" onclick="toggleMute()">🎵</div>
+
+    <section id="setup-area" class="w-full max-w-3xl text-center space-y-12">
+        <div>
+            <h1 class="text-6xl font-black text-yellow-500 italic tracking-tighter mb-2">MUDRA MASTER</h1>
+            <p class="text-gray-500 text-lg">設定結印技能，感受真實修行節奏</p>
+        </div>
+
+        <div class="flex justify-center gap-6">
+            <div class="slot-container">
+                <div id="skill-0" onclick="openModal(0)" class="skill-slot"><span class="text-gray-600 text-4xl">+</span></div>
+                <div id="key-0" onclick="startKeyCapture(0)" class="key-text cursor-pointer hover:text-white">Q</div>
+            </div>
+            <div class="slot-container">
+                <div id="skill-1" onclick="openModal(1)" class="skill-slot"><span class="text-gray-600 text-4xl">+</span></div>
+                <div id="key-1" onclick="startKeyCapture(1)" class="key-text cursor-pointer hover:text-white">W</div>
+            </div>
+            <div class="slot-container">
+                <div id="skill-2" onclick="openModal(2)" class="skill-slot"><span class="text-gray-600 text-4xl">+</span></div>
+                <div id="key-2" onclick="startKeyCapture(2)" class="key-text cursor-pointer hover:text-white">E</div>
+            </div>
+            <div class="slot-container">
+                <div id="skill-3" onclick="openModal(3)" class="skill-slot"><span class="text-gray-600 text-4xl">+</span></div>
+                <div id="key-3" onclick="startKeyCapture(3)" class="key-text cursor-pointer hover:text-white">R</div>
+            </div>
+        </div>
+
+        <div class="flex gap-4 max-w-md mx-auto">
+            <button onclick="launchGame('free')" id="btn-free" class="btn-action flex-1 border-green-500/50 text-green-500 bg-green-500/10" disabled>自由練習</button>
+            <button onclick="launchGame('challenge')" id="btn-challenge" class="btn-action flex-1 border-red-500/50 text-red-500 bg-red-500/10" disabled>挑戰模式</button>
+        </div>
+    </section>
+
+    <div id="skill-modal" onclick="closeModal()">
+        <div class="modal-body" onclick="event.stopPropagation()">
+            <h3 class="text-2xl font-black text-yellow-500 italic uppercase">請選擇技能</h3>
+            <div class="selection-grid">
+                <button class="select-item-btn" onclick="applySkill('天')"><img src="ten.png"></button>
+                <button class="select-item-btn" onclick="applySkill('地')"><img src="chi.png"></button>
+                <button class="select-item-btn" onclick="applySkill('人')"><img src="jin.png"></button>
+                <button class="select-item-btn" onclick="applySkill('發動')"><img src="ninjutsu.png"></button>
+            </div>
+            <button onclick="closeModal()" class="text-gray-500 hover:text-red-400 font-bold transition-colors">取消</button>
+        </div>
+    </div>
+
+    <main id="game-area" class="hidden w-full max-w-2xl animate-in fade-in duration-500">
+        <div class="glass-card p-10 space-y-10">
+            <div class="flex justify-between items-center">
+                <button onclick="location.reload();" class="px-4 py-2 bg-gray-800 border border-gray-700 rounded text-xs font-bold hover:text-red-400">退出</button>
+                <div class="text-3xl font-black text-yellow-500">COMBO <span id="combo-display" class="text-white">0</span></div>
+            </div>
+            <div class="text-center space-y-6">
+                <img id="target-icon" src="" class="w-24 h-24 mx-auto rounded-2xl border-2 border-yellow-500/20 mb-2 shadow-2xl p-1">
+                <h2 id="target-name" class="text-4xl font-black italic tracking-tighter">---</h2>
+                <div id="hint-box" class="flex justify-center gap-2"></div>
+                <div id="mudra-display-container"></div>
+            </div>
+            <div class="pt-8 border-t border-gray-800/50">
+                <div id="game-hotbar-display" class="flex justify-center gap-8"></div>
+            </div>
+        </div>
+    </main>
+
+    <div id="fail-modal" class="fixed inset-0 bg-black/95 flex items-center justify-center z-[1000] hidden">
+        <div class="glass-card p-12 text-center max-w-sm border-red-500/50">
+            <img id="fail-icon" src="rabbit.png" class="w-24 h-24 mx-auto mb-6 object-contain">
+            <h2 class="text-4xl font-black text-red-600 mb-4 italic tracking-widest">修行失敗</h2>
+            <p id="fail-reason" class="text-gray-400 mb-10 text-base"></p>
+            <button onclick="location.reload();" class="w-full py-4 bg-yellow-600 text-black font-black rounded-xl hover:bg-yellow-500 shadow-lg">重新開始</button>
+        </div>
+    </div>
+
+    <script>
+        const IMGS = {
+            "天": "ten.png", "地": "chi.png", "人": "jin.png", "發動": "ninjutsu.png", "兔子": "rabbit.png",
+            "風魔手裏劍": "shuriken.png", "火遁之術": "katon.png", "雷遁之術": "raiton.png",
+            "冰遁之術": "hyoton.png", "水遁之術": "suiton.png", "土遁之術": "doton.png", "風遁之術": "huton.png"
+        };
+
+        const JUTSU_DATA = [
+            { name: "風魔手裏劍", answers: [["天"], ["地"], ["人"]] },
+            { name: "火遁之術", answers: [["地", "天"], ["人", "天"]] },
+            { name: "雷遁之術", answers: [["天", "地"], ["人", "地"]] },
+            { name: "冰遁之術", answers: [["天", "人"], ["地", "人"]] },
+            { name: "水遁之術", answers: [["地", "人", "天"], ["人", "地", "天"]] },
+            { name: "土遁之術", answers: [["天", "人", "地"], ["人", "天", "地"]] },
+            { name: "風遁之術", answers: [["天", "地", "人"], ["地", "天", "人"]] }
+        ];
+
+        let config = JSON.parse(localStorage.getItem('nnj_final_v16')) || [
+            { skill: '', key: 'q' }, { skill: '', key: 'w' }, { skill: '', key: 'e' }, { skill: '', key: 'r' }
+        ];
+        let currentSlotIdx = -1, recordingIdx = -1;
+        let game = { active: false, mode: '', combo: 0, seq: [], target: null, isGCD: false };
+        let isMuted = false;
+
+        const bgmPlayer = document.getElementById('bgm-player');
+        bgmPlayer.volume = 0.4;
+
+        refreshUI();
+
+        // 🟢 音效與音樂控制 🟢
+        function playSound(id) {
+            if (isMuted) return;
+            const sound = document.getElementById(`sfx-${id}`);
+            if (sound) { sound.currentTime = 0; sound.play().catch(()=>{}); }
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            document.getElementById('music-toggle').innerText = isMuted ? '🔇' : '🎵';
+            if (isMuted) bgmPlayer.pause();
+            else bgmPlayer.play().catch(()=>{});
+        }
+
+        // 啟動 BGM (使用者第一次互動)
+        window.addEventListener('click', () => {
+            if(bgmPlayer.paused && !isMuted) bgmPlayer.play().catch(()=>{});
+        }, { once: true });
+
+        // --- 核心邏輯 ---
+        function openModal(idx) { playSound('click'); currentSlotIdx = idx; document.getElementById('skill-modal').style.display = 'flex'; }
+        function closeModal() { playSound('click'); document.getElementById('skill-modal').style.display = 'none'; }
+        
+        function applySkill(skillName) {
+            playSound('click');
+            config[currentSlotIdx].skill = skillName;
+            localStorage.setItem('nnj_final_v16', JSON.stringify(config));
+            refreshUI(); closeModal();
+        }
+
+        function startKeyCapture(idx) {
+            playSound('click');
+            recordingIdx = idx;
+            const el = document.getElementById(`key-${idx}`);
+            el.innerText = "..."; el.classList.add('animate-pulse', 'text-white');
+            window.addEventListener('keydown', handleKeyInput);
+        }
+
+        function handleKeyInput(e) {
+            e.preventDefault();
+            playSound('click');
+            config[recordingIdx].key = e.key.toLowerCase();
+            localStorage.setItem('nnj_final_v16', JSON.stringify(config));
+            document.getElementById(`key-${recordingIdx}`).classList.remove('animate-pulse', 'text-white');
+            refreshUI(); recordingIdx = -1;
+            window.removeEventListener('keydown', handleKeyInput);
+        }
+
+        function refreshUI() {
+            config.forEach((c, i) => {
+                const sEl = document.getElementById(`skill-${i}`);
+                const kEl = document.getElementById(`key-${i}`);
+                if (c.skill) sEl.innerHTML = `<img src="${IMGS[c.skill]}">`;
+                kEl.innerText = c.key ? c.key.toUpperCase() : "---";
+            });
+            const ready = config.every(c => c.skill && c.key);
+            document.getElementById('btn-free').disabled = !ready;
+            document.getElementById('btn-challenge').disabled = !ready;
+        }
+
+        function launchGame(mode) {
+            playSound('click');
+            game.mode = mode; game.active = true;
+            document.getElementById('setup-area').classList.add('hidden');
+            document.getElementById('game-area').classList.remove('hidden');
+            const hotbar = document.getElementById('game-hotbar-display');
+            hotbar.innerHTML = '';
+            config.forEach((c, i) => {
+                hotbar.innerHTML += `
+                    <div id="game-slot-${i}" class="game-hotbar-item flex flex-col items-center">
+                        <div class="hotbar-icon-wrap w-16 h-16 p-2"><img src="${IMGS[c.skill]}" class="w-full h-full object-contain"></div>
+                        <div class="mt-2 text-sm font-black text-blue-400 uppercase">${c.key}</div>
+                    </div>`;
+            });
+            nextTarget();
+        }
+
+        function nextTarget() {
+            game.seq = [];
+            game.target = JUTSU_DATA[Math.floor(Math.random() * JUTSU_DATA.length)];
+            document.getElementById('target-name').innerText = game.target.name;
+            document.getElementById('target-icon').src = IMGS[game.target.name];
+            document.getElementById('mudra-display-container').innerHTML = ''; 
+            const hb = document.getElementById('hint-box'); hb.innerHTML = '';
+            if(game.mode === 'free') {
+                game.target.answers.forEach(ans => {
+                    let g = `<div class="flex gap-1 bg-white/5 p-1 rounded border border-white/10">`;
+                    ans.forEach(m => g += `<img src="${IMGS[m]}" class="w-4 h-4 opacity-40">`);
+                    hb.innerHTML += g + `</div>`;
+                });
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if(!game.active || recordingIdx !== -1 || game.isGCD) return; 
+            const key = e.key.toLowerCase();
+            const configIdx = config.findIndex(c => c.key === key);
+            if(configIdx !== -1) {
+                const action = config[configIdx];
+                runGCD(); 
+                document.getElementById(`game-slot-${configIdx}`).classList.add('scale-110');
+                setTimeout(() => document.getElementById(`game-slot-${configIdx}`).classList.remove('scale-110'), 100);
+                
+                if(action.skill === '發動') {
+                    doCast();
+                } else {
+                    playSound('mudra');
+                    doMudra(action.skill);
+                }
+            }
+        });
+
+        function runGCD() {
+            game.isGCD = true;
+            document.querySelectorAll('.game-hotbar-item').forEach(el => el.classList.add('gcd-active'));
+            setTimeout(() => {
+                game.isGCD = false;
+                document.querySelectorAll('.game-hotbar-item').forEach(el => el.classList.remove('gcd-active'));
+            }, 500); 
+        }
+
+        function doMudra(m) {
+            if(game.seq.includes(m) || game.seq.length >= 3) {
+                if(game.mode === 'challenge') {
+                    playSound('fail-challenge');
+                    showDeath("重複結印 (Rabbit)");
+                } else {
+                    playSound('fail-free');
+                    game.seq = []; nextTarget();
+                }
+                return;
+            }
+            game.seq.push(m);
+            const container = document.getElementById('mudra-display-container');
+            const img = document.createElement('img');
+            img.src = IMGS[m]; img.className = 'mudra-icon-static animate-in zoom-in duration-200'; 
+            container.appendChild(img);
+        }
+
+        function doCast() {
+            if(game.seq.length === 0) return;
+            const len = game.seq.length, last = game.seq[len-1];
+            let res = "兔子";
+            if(len === 1) res = "風魔手裏劍";
+            else if(len === 2) {
+                if(last === "天") res = "火遁之術";
+                if(last === "地") res = "雷遁之術";
+                if(last === "人") res = "冰遁之術";
+            } else if(len === 3) {
+                if(last === "天") res = "水遁之術";
+                if(last === "地") res = "土遁之術";
+                if(last === "人") res = "風遁之術";
+            }
+            
+            if(res === game.target.name) {
+                playSound('success');
+                game.combo++; document.getElementById('combo-display').innerText = game.combo;
+                nextTarget();
+            } else {
+                if(game.mode === 'challenge') {
+                    playSound('fail-challenge');
+                    showDeath(`忍術發動錯誤！施展成了「${res}」`);
+                } else {
+                    playSound('fail-free');
+                    nextTarget();
+                }
+            }
+        }
+
+        function showDeath(reason) {
+            game.active = false;
+            document.getElementById('fail-modal').classList.remove('hidden');
+            document.getElementById('fail-reason').innerText = reason;
+        }
+    </script>
+</body>
+</html>
