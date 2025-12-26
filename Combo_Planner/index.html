@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>FFXIV Modern Planner - Pro Layout</title>
+    <style>
+        :root {
+            --bg-color: #f0f2f5;
+            --panel-color: #ffffff;
+            --primary-color: #ff7e5f;
+            --secondary-color: #4facfe;
+            --text-color: #2d3436;
+            --unit-width: 100px;
+            --track-length: 16;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', 'Noto Sans TC', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Header --- */
+        header {
+            background: #ffffff;
+            padding: 10px 25px;
+            border-bottom: 2px solid #e1e4e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .logo-container { display: flex; align-items: center; gap: 12px; }
+        .main-logo { width: 40px; height: 40px; object-fit: contain; border-radius: 8px; background: #f0f2f5; }
+
+        .header-btns { display: flex; gap: 12px; }
+
+        button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-icon { width: 20px; height: 20px; object-fit: contain; }
+        button:hover { transform: translateY(-1px); filter: brightness(1.1); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+
+        /* --- Main Layout --- */
+        main { display: flex; flex: 1; overflow: hidden; padding: 15px; gap: 15px; }
+
+        /* --- Sidebar --- */
+        #job-sidebar { width: 320px; background: var(--panel-color); border-radius: 16px; overflow-y: auto; padding: 15px; border: 1px solid #e1e4e8; }
+        .role-group { margin-bottom: 20px; }
+        .role-title { font-size: 12px; font-weight: 800; color: #95a5a6; margin-bottom: 8px; padding-left: 5px; text-transform: uppercase; letter-spacing: 1px; }
+        .job-section { margin-bottom: 6px; border-radius: 10px; border: 1px solid #f1f2f6; background: #f8f9fa; }
+        .job-header { padding: 12px 15px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; font-weight: 700; color: #444; }
+        .job-content { display: none; padding: 10px; grid-template-columns: repeat(4, 1fr); gap: 10px; background: white; }
+        .job-section.open .job-content { display: grid; }
+        .skill-node { width: 55px; height: 55px; background-size: cover; border-radius: 10px; cursor: grab; border: 1px solid #eee; transition: 0.2s; }
+        .skill-node:hover { transform: scale(1.05); border-color: var(--secondary-color); }
+
+        /* --- Editor Viewport --- */
+        #editor-viewport { flex: 1; overflow: auto; padding: 10px; display: flex; flex-direction: column; gap: 30px; }
+
+        /* --- Track Container --- */
+        .track-container { 
+            background: white; padding: 25px 35px; border-radius: 16px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
+            width: calc(var(--track-length) * var(--unit-width) + 80px); 
+            flex-shrink: 0; border: 1px solid #e1e4e8; 
+        }
+
+        .track-header { 
+            display: flex; 
+            align-items: center; 
+            margin-bottom: 25px; 
+            gap: 15px; /* 控制標題與按鈕組的距離 */
+        }
+
+        .title-group { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            background: #f8f9fa;
+            padding: 5px 15px 5px 5px;
+            border-radius: 10px;
+        }
+
+        .track-title-text { 
+            font-size: 18px; 
+            font-weight: 800; 
+            color: var(--text-color); 
+            border-left: 4px solid var(--primary-color); 
+            padding-left: 12px; 
+        }
+
+        /* 控制按鈕組 */
+        .track-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .edit-icon { 
+            cursor: pointer; 
+            opacity: 0.4; 
+            font-size: 16px;
+            transition: 0.2s;
+            padding: 5px;
+            border-radius: 6px;
+        }
+        .edit-icon:hover { opacity: 1; background: #eef0f2; color: var(--primary-color); }
+
+        .btn-delete-track { 
+            background: #fff0f0; 
+            color: #ff4757; 
+            padding: 5px 12px; 
+            font-size: 12px; 
+            font-weight: 700;
+            border-radius: 8px; 
+            border: 1px solid #ffdada;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-delete-track:hover { background: #ff4757; color: white; border-color: #ff4757; }
+
+        /* --- Canvas --- */
+        .track-canvas { display: flex; align-items: flex-end; padding-top: 50px; padding-bottom: 35px; background: #fcfcfc; border-radius: 12px; border: 1px solid #f1f2f6; }
+        .time-block { width: var(--unit-width); display: flex; flex-direction: column; align-items: center; position: relative; flex-shrink: 0; }
+        .slot { border: 2px solid #eef0f2; display: flex; align-items: center; justify-content: center; position: relative; background: #fff; border-radius: 8px; transition: 0.2s; }
+        .slot-gcd { width: 62px; height: 62px; }
+        .ogcd-row { display: flex; gap: 4px; position: absolute; top: -42px; right: calc(var(--unit-width) / -2 + 15px); }
+        .slot-ogcd { width: 32px; height: 32px; }
+        .placed-skill { width: 100%; height: 100%; background-size: cover; border-radius: 6px; }
+        .remove-btn { position: absolute; top: -8px; right: -8px; background: #2d3436; border-radius: 50%; width: 20px; height: 20px; color: white; border: 2px solid #fff; cursor: pointer; display: none; font-size: 10px; }
+        .slot:hover .remove-btn { display: flex; align-items: center; justify-content: center; }
+        .time-label { position: absolute; bottom: -25px; font-size: 11px; font-weight: 700; color: #adb5bd; font-family: monospace; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #d1d8e0; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo-container">
+        <img src="assets/logo.png" alt="Logo" class="main-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+        <div style="display:none; background:var(--primary-color); width:32px; height:32px; border-radius:8px; color:white; text-align:center; line-height:32px; font-weight:bold;">FF</div>
+        <strong style="font-size: 18px; letter-spacing: -0.5px;">Rotation Planner</strong> 
+    </div>
+    
+    <div class="header-btns">
+        <button onclick="addNewTrack()">
+            <img src="assets/icon-add.png" alt="" class="btn-icon">
+            新增排軸
+        </button>
+        <button style="background:var(--secondary-color);" onclick="exportTimeline()">
+            <img src="assets/icon-export.png" alt="" class="btn-icon">
+            導出代碼
+        </button>
+        <button style="background:#2d3436;" onclick="importTimeline()">
+            <img src="assets/icon-import.png" alt="" class="btn-icon">
+            匯入代碼
+        </button>
+    </div>
+</header>
+
+<main>
+    <aside id="job-sidebar">
+        <p style="padding:20px; color:#999; font-size:14px;">載入中...</p>
+    </aside>
+    <div id="editor-viewport"></div>
+</main>
+
+<script src="manifest.js"></script>
+
+<script>
+    const sidebar = document.getElementById('job-sidebar');
+
+    function init() {
+        if (typeof SKILL_MANIFEST === 'undefined') {
+            sidebar.innerHTML = `<p style="padding:20px; color:#ff4757;">未偵測到 manifest.js</p>`;
+            return;
+        }
+        renderSidebar(SKILL_MANIFEST);
+    }
+
+    function renderSidebar(data) {
+        sidebar.innerHTML = '';
+        Object.keys(data).sort().forEach(role => {
+            const roleGroup = document.createElement('div');
+            roleGroup.className = 'role-group';
+            roleGroup.innerHTML = `<div class="role-title">${role}</div>`;
+            const jobs = data[role];
+            Object.keys(jobs).sort().forEach(job => {
+                const section = document.createElement('div');
+                section.className = 'job-section';
+                section.innerHTML = `
+                    <div class="job-header" onclick="this.parentElement.classList.toggle('open')">
+                        <span>${job}</span><span style="font-size:10px; opacity:0.5;">▼</span>
+                    </div>
+                    <div class="job-content"></div>
+                `;
+                const content = section.querySelector('.job-content');
+                jobs[job].forEach(path => {
+                    const node = document.createElement('div');
+                    node.className = 'skill-node';
+                    const encodedPath = encodeURI(path);
+                    node.style.backgroundImage = `url('${encodedPath}')`;
+                    node.draggable = true;
+                    node.ondragstart = (e) => e.dataTransfer.setData('img', encodedPath);
+                    content.appendChild(node);
+                });
+                roleGroup.appendChild(section);
+            });
+            sidebar.appendChild(roleGroup);
+        });
+    }
+
+    function setupDropZones(canvas) {
+        canvas.querySelectorAll('.slot').forEach(slot => {
+            slot.ondragover = (e) => e.preventDefault();
+            slot.ondrop = (e) => {
+                const imgUrl = e.dataTransfer.getData('img');
+                if(!imgUrl) return;
+                slot.innerHTML = `<div class="placed-skill" style="background-image:url('${imgUrl}')">
+                    <button class="remove-btn" onclick="this.parentElement.remove()">×</button>
+                </div>`;
+            };
+        });
+    }
+
+    function editTitle(el) {
+        // el 現在是編輯圖示，父元素的父元素才是標題組
+        const titleSpan = el.closest('.track-header').querySelector('.track-title-text');
+        const newTitle = prompt("修改軸名稱：", titleSpan.innerText);
+        if (newTitle) titleSpan.innerText = newTitle;
+    }
+
+    function addNewTrack(title = "未命名爆發軸") {
+        const container = document.createElement('div');
+        container.className = 'track-container';
+        container.innerHTML = `
+            <div class="track-header">
+                <div class="title-group">
+                    <span class="track-title-text">${title}</span>
+                </div>
+                <div class="track-controls">
+                    <span class="edit-icon" onclick="editTitle(this)" title="編輯名稱">✎</span>
+                    <button class="btn-delete-track" onclick="if(confirm('確定要刪除這條軸嗎？')) this.closest('.track-container').remove()">刪除</button>
+                </div>
+            </div>
+            <div class="track-canvas"></div>
+        `;
+        const canvas = container.querySelector('.track-canvas');
+        for (let i = 0; i < 16; i++) {
+            const block = document.createElement('div');
+            block.className = 'time-block';
+            block.innerHTML = `
+                <div class="ogcd-row"><div class="slot slot-ogcd"></div><div class="slot slot-ogcd"></div></div>
+                <div class="slot slot-gcd"></div>
+                <div class="time-label">${(i * 2.5).toFixed(1)}s</div>
+            `;
+            canvas.appendChild(block);
+        }
+        document.getElementById('editor-viewport').appendChild(container);
+        setupDropZones(canvas);
+        container.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function exportTimeline() {
+        const tracks = [];
+        document.querySelectorAll('.track-container').forEach(track => {
+            const title = track.querySelector('.track-title-text').innerText;
+            const skills = [];
+            track.querySelectorAll('.slot').forEach((slot, index) => {
+                const placed = slot.querySelector('.placed-skill');
+                if (placed) skills.push({ i: index, img: placed.style.backgroundImage.slice(5, -2) });
+            });
+            tracks.push({ t: title, s: skills });
+        });
+        const encoded = btoa(encodeURIComponent(JSON.stringify(tracks)));
+        navigator.clipboard.writeText(encoded).then(() => alert("代碼已存入剪貼簿。"));
+    }
+
+    function importTimeline() {
+        const code = prompt("請貼入代碼：");
+        if (!code) return;
+        try {
+            const tracks = JSON.parse(decodeURIComponent(atob(code)));
+            document.getElementById('editor-viewport').innerHTML = '';
+            tracks.forEach(trackData => {
+                addNewTrack(trackData.t);
+                const lastTrack = document.getElementById('editor-viewport').lastElementChild;
+                const allSlots = lastTrack.querySelectorAll('.slot');
+                trackData.s.forEach(skill => {
+                    if (allSlots[skill.i]) {
+                        allSlots[skill.i].innerHTML = `<div class="placed-skill" style="background-image:url('${skill.img}')">
+                            <button class="remove-btn" onclick="this.parentElement.remove()">×</button>
+                        </div>`;
+                    }
+                });
+            });
+        } catch (e) { alert("代碼讀取失敗"); }
+    }
+
+    init();
+    addNewTrack("Opener 40s");
+</script>
+</body>
+</html>
